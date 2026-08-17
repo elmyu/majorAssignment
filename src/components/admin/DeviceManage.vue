@@ -1,0 +1,326 @@
+<script setup>
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { getDevices, createDevice, updateDevice, deleteDevice } from '../../services/api.js'
+
+const devices = ref([])
+const searchQuery = ref('')
+const statusFilter = ref('')
+const showModal = ref(false)
+const showDeleteConfirm = ref(false)
+const showBatchConfirm = ref(false)
+const editingDevice = ref(null)
+const deleteTarget = ref(null)
+const toasts = ref([])
+const selectedIds = ref(new Set())
+
+const form = reactive({
+  name: '', model: '', department: '', purchaseDate: '', price: null,
+  status: '正常使用', runStatus: '在线', note: '',
+})
+
+const departmentOptions = ['心内科', '超声科', 'ICU重症监护室', '呼吸科', '普外科', '肾内科', '麻醉科', '放射科', '急诊科', '骨科', '神经内科', '儿科', '妇产科', '消化内科', '内分泌科', '检验科', '病理科', '康复科', '口腔科', '眼科']
+const runStatusOptions = ['在线', '运行中', '故障', '校准中', '离线']
+
+const activeCount = computed(() => devices.value.filter(d => d.status === '正常使用').length)
+const repairCount = computed(() => devices.value.filter(d => d.status === '维修中').length)
+const idleCount = computed(() => devices.value.filter(d => d.status === '闲置').length)
+const scrappedCount = computed(() => devices.value.filter(d => d.status === '已报废').length)
+
+const filteredDevices = computed(() => {
+  let r = devices.value
+  const q = searchQuery.value.trim().toLowerCase()
+  if (q) r = r.filter(d => [d.name, d.model, d.department, d.code, d.note].some(x => (x || '').toLowerCase().includes(q)))
+  if (statusFilter.value) r = r.filter(d => d.status === statusFilter.value)
+  return [...r].sort((a, b) => new Date(b.purchaseDate) - new Date(a.purchaseDate))
+})
+
+const fmtPrice = (p) => Number(p || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2 })
+const stClass = (s) => ({ '正常使用': 'active', '维修中': 'repair', '闲置': 'idle', '已报废': 'scrapped' }[s] || 'idle')
+const runClass = (r) => ({ '在线': 'online', '运行中': 'running', '故障': 'fail', '校准中': 'calib', '离线': 'offline' }[r] || 'offline')
+
+const showToast = (m, t = 'info') => {
+  const id = Date.now() + Math.random()
+  toasts.value.push({ id, message: m, type: t })
+  setTimeout(() => (toasts.value = toasts.value.filter(x => x.id !== id)), 2800)
+}
+const setFilter = (s) => (statusFilter.value = statusFilter.value === s ? '' : s)
+
+function loadDevices() {
+  try { devices.value = getDevices() } catch (e) { showToast(e.message, 'warning') }
+}
+onMounted(loadDevices)
+
+function openAddModal() {
+  editingDevice.value = null
+  Object.assign(form, { name: '', model: '', department: '', purchaseDate: new Date().toISOString().split('T')[0], price: null, status: '正常使用', runStatus: '在线', note: '' })
+  showModal.value = true
+}
+function openEditModal(d) {
+  editingDevice.value = d
+  Object.assign(form, { name: d.name, model: d.model, department: d.department, purchaseDate: d.purchaseDate, price: d.price, status: d.status, runStatus: d.runStatus || '在线', note: d.note || '' })
+  showModal.value = true
+}
+const closeModal = () => { showModal.value = false; editingDevice.value = null }
+
+function submitForm() {
+  if (!form.name.trim()) return showToast('请输入设备名称', 'warning')
+  if (!form.department) return showToast('请选择所属科室', 'warning')
+  if (!form.purchaseDate) return showToast('请选择购置日期', 'warning')
+  if (form.price === null || form.price === '' || form.price < 0) return showToast('请输入有效的价格', 'warning')
+  const data = { name: form.name.trim(), model: form.model.trim(), department: form.department, purchaseDate: form.purchaseDate, price: Number(form.price), status: form.status, runStatus: form.runStatus, note: form.note.trim() }
+  try {
+    if (editingDevice.value) { updateDevice(editingDevice.value.id, data); showToast('设备信息已更新', 'success') }
+    else { createDevice(data); showToast('新设备已成功录入', 'success') }
+    closeModal(); loadDevices()
+  } catch (e) { showToast(e.message, 'warning') }
+}
+
+function changeStatus(d, ns) {
+  try {
+    updateDevice(d.id, { status: ns }); d.status = ns
+    showToast(`「${d.name}」状态已更新为"${ns}"`, 'success')
+  } catch (e) { showToast(e.message, 'warning') }
+}
+function changeRunStatus(d, ns) {
+  try { updateDevice(d.id, { runStatus: ns }); d.runStatus = ns; showToast(`「${d.name}」运行状态已更新为"${ns}"`, 'success') }
+  catch (e) { showToast(e.message, 'warning') }
+}
+
+function confirmDelete(d) { deleteTarget.value = d; showDeleteConfirm.value = true }
+const cancelDelete = () => { showDeleteConfirm.value = false; deleteTarget.value = null }
+function executeDelete() {
+  try { deleteDevice(deleteTarget.value.id); devices.value = devices.value.filter(x => x.id !== deleteTarget.value.id); showToast(`设备「${deleteTarget.value.name}」已删除`, 'success') }
+  catch (e) { showToast(e.message, 'warning') }
+  cancelDelete()
+}
+function confirmClearScrapped() {
+  const count = devices.value.filter(d => d.status === '已报废').length
+  if (!count) return showToast('没有可清空的报废设备', 'info')
+  devices.value.filter(d => d.status === '已报废').forEach(d => { try { deleteDevice(d.id) } catch (e) {} })
+  loadDevices(); showToast(`已清空 ${count} 台报废设备`, 'success')
+}
+
+const batchSelectedCount = computed(() => selectedIds.value.size)
+const isAllSelected = computed(() => filteredDevices.value.length > 0 && filteredDevices.value.every(d => selectedIds.value.has(d.id)))
+const toggleSelect = (id) => { const s = new Set(selectedIds.value); s.has(id) ? s.delete(id) : s.add(id); selectedIds.value = s }
+const toggleSelectAll = () => {
+  if (isAllSelected.value) selectedIds.value = new Set()
+  else { const s = new Set(selectedIds.value); filteredDevices.value.forEach(d => s.add(d.id)); selectedIds.value = s }
+}
+function executeBatchDelete() {
+  const ids = [...selectedIds.value]
+  if (!ids.length) { showBatchConfirm.value = false; return }
+  ids.forEach(id => { try { deleteDevice(id) } catch (e) {} })
+  selectedIds.value = new Set()
+  loadDevices(); showToast(`已批量删除 ${ids.length} 台设备`, 'success'); showBatchConfirm.value = false
+}
+</script>
+
+<template>
+  <div class="device-manage">
+    <div class="head-desc">管理员权限：可录入新购置医疗设备、修改现有设备状态、删除报废设备。</div>
+
+    <section class="stats-bar">
+      <button class="chip" :class="{ active: statusFilter === '' }" @click="setFilter('')">全部 <b>{{ devices.length }}</b></button>
+      <button class="chip" :class="{ active: statusFilter === '正常使用' }" @click="setFilter('正常使用')">正常使用 <b>{{ activeCount }}</b></button>
+      <button class="chip" :class="{ active: statusFilter === '维修中' }" @click="setFilter('维修中')">维修中 <b>{{ repairCount }}</b></button>
+      <button class="chip" :class="{ active: statusFilter === '闲置' }" @click="setFilter('闲置')">闲置 <b>{{ idleCount }}</b></button>
+      <button class="chip chip-scrapped" :class="{ active: statusFilter === '已报废' }" @click="setFilter('已报废')">已报废 <b>{{ scrappedCount }}</b></button>
+    </section>
+
+    <section class="toolbar">
+      <div class="search-wrap">
+        <input v-model="searchQuery" placeholder="搜索名称、型号、科室、编号..." class="search-input" />
+      </div>
+      <span class="result-count">共 <b>{{ filteredDevices.length }}</b> 项结果</span>
+      <div class="action-bar">
+        <button class="btn btn-primary" @click="openAddModal">新增设备</button>
+        <button class="btn btn-batch" @click="showBatchConfirm = true" :disabled="batchSelectedCount === 0">批量删除<span v-if="batchSelectedCount" class="cnt">{{ batchSelectedCount }}</span></button>
+        <button class="btn btn-clear" @click="confirmClearScrapped" :disabled="scrappedCount === 0">清空报废<span v-if="scrappedCount" class="cnt">{{ scrappedCount }}</span></button>
+      </div>
+    </section>
+
+    <section class="table-card">
+      <table class="device-table" v-if="filteredDevices.length">
+        <thead>
+          <tr>
+            <th class="col-check"><input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" /></th>
+            <th>编号</th><th>设备名称</th><th>所属科室</th><th>型号</th><th>购置日期</th><th>价格(元)</th>
+            <th>使用状态</th><th>运行状态</th><th>备注</th><th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="device in filteredDevices" :key="device.id" :class="{ scrapped: device.status === '已报废', sel: selectedIds.has(device.id), fail: device.runStatus === '故障' }">
+            <td class="col-check"><input type="checkbox" :checked="selectedIds.has(device.id)" @change="toggleSelect(device.id)" /></td>
+            <td class="code">{{ device.code }}</td>
+            <td class="name">{{ device.name }}</td>
+            <td>{{ device.department }}</td>
+            <td>{{ device.model || '-' }}</td>
+            <td>{{ device.purchaseDate }}</td>
+            <td>¥{{ fmtPrice(device.price) }}</td>
+            <td><span class="badge" :class="'st-' + stClass(device.status)">{{ device.status }}</span></td>
+            <td>
+              <select class="run-sel" :class="'run-' + runClass(device.runStatus)" :value="device.runStatus" @change="changeRunStatus(device, $event.target.value)">
+                <option v-for="r in runStatusOptions" :key="r" :value="r">{{ r }}</option>
+              </select>
+            </td>
+            <td class="note">{{ device.note || '-' }}</td>
+            <td>
+              <div class="ops">
+                <button class="op-edit" @click="openEditModal(device)">编辑</button>
+                <button class="op-del" @click="confirmDelete(device)">删除</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-else class="empty">{{ searchQuery || statusFilter ? '未找到匹配设备' : '暂无设备数据' }}</div>
+    </section>
+
+    <!-- 新增/编辑 -->
+    <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
+      <div class="modal">
+        <div class="modal-head"><h3>{{ editingDevice ? '编辑设备信息' : '录入新医疗设备' }}</h3><button class="x" @click="closeModal">✕</button></div>
+        <form class="modal-body" @submit.prevent="submitForm">
+          <div class="row2">
+            <label class="f">设备名称 *<input v-model="form.name" required maxlength="50" /></label>
+            <label class="f">型号<input v-model="form.model" maxlength="30" /></label>
+          </div>
+          <div class="row2">
+            <label class="f">所属科室 *
+              <select v-model="form.department" required><option value="">请选择科室</option><option v-for="d in departmentOptions" :key="d" :value="d">{{ d }}</option></select>
+            </label>
+            <label class="f">购置日期 *<input type="date" v-model="form.purchaseDate" required /></label>
+          </div>
+          <div class="row2">
+            <label class="f">价格(元) *<input type="number" v-model.number="form.price" min="0" step="0.01" required /></label>
+            <label class="f">使用状态
+              <select v-model="form.status"><option v-for="s in ['正常使用', '维修中', '闲置', '已报废']" :key="s" :value="s">{{ s }}</option></select>
+            </label>
+          </div>
+          <label class="f">运行状态
+            <select v-model="form.runStatus"><option v-for="r in runStatusOptions" :key="r" :value="r">{{ r }}</option></select>
+          </label>
+          <label class="f">备注<textarea v-model="form.note" maxlength="200" rows="3"></textarea></label>
+          <div class="modal-foot">
+            <button type="button" class="btn ghost" @click="closeModal">取消</button>
+            <button type="submit" class="btn pri">{{ editingDevice ? '保存修改' : '确认录入' }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 删除确认 -->
+    <div v-if="showDeleteConfirm" class="del-overlay" @click.self="cancelDelete">
+      <div class="del-dialog">
+        <div class="del-icon">!</div>
+        <h3 class="del-title">确认删除</h3>
+        <p v-if="deleteTarget" class="del-text">
+          确定要删除设备 <b class="del-name">{{ deleteTarget.name }}</b><br />
+          （{{ deleteTarget.code }}）<br />
+          <span class="del-warn">此操作不可恢复！</span>
+        </p>
+        <div class="del-btns">
+          <button class="del-cancel" @click="cancelDelete">取消</button>
+          <button class="del-confirm" @click="executeDelete">确认删除</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 批量删除确认 -->
+    <div v-if="showBatchConfirm" class="del-overlay" @click.self="showBatchConfirm = false">
+      <div class="del-dialog">
+        <div class="del-icon">!</div>
+        <h3 class="del-title">批量删除</h3>
+        <p class="del-text">
+          确定要批量删除选中的 <b class="del-name">{{ batchSelectedCount }}</b> 台设备吗？<br />
+          <span class="del-warn">此操作不可恢复！</span>
+        </p>
+        <div class="del-btns">
+          <button class="del-cancel" @click="showBatchConfirm = false">取消</button>
+          <button class="del-confirm" @click="executeBatchDelete">确认删除</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-container">
+      <div v-for="t in toasts" :key="t.id" class="toast-item" :class="'toast-' + t.type">{{ t.message }}</div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.device-manage { display: flex; flex-direction: column; gap: 14px; }
+.head-desc { padding: 10px 14px; background: #eef6ee; color: #3d6b40; border: 1px solid #d0e4d0; font-size: 0.85rem; }
+.stats-bar { display: flex; gap: 8px; flex-wrap: wrap; background: #fff; border: 1px solid #eef2ee; padding: 10px 12px; }
+.chip { padding: 6px 14px; font-size: 0.84rem; color: #4b5563; background: #f6f8f6; border: 1px solid transparent; cursor: pointer; font-family: inherit; }
+.chip b { font-weight: 700; }
+.chip.active { border-color: #83b785; color: #3d6b40; }
+.toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.action-bar { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 0.84rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; font-family: inherit; }
+.btn-primary { background: #4a854d; color: #fff; }
+.btn-primary:hover { background: #3d6b40; }
+.btn-batch { background: #fff; color: #8a6d3b; border-color: #eee2c8; }
+.btn-clear { background: #fff; color: #c0392b; border-color: #f0c8c8; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.cnt { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; font-size: 0.68rem; font-weight: 800; background: #d03434; color: #fff; border-radius: 10px; }
+.search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 340px; }
+.search-input { width: 100%; padding: 8px 12px; border: 1px solid #e5e7eb; font-size: 0.84rem; background: #fff; font-family: inherit; box-sizing: border-box; }
+.result-count { font-size: 0.85rem; color: #4b5563; }
+.result-count b { color: #4a854d; }
+.table-card { background: #fff; border: 1px solid #eef2ee; overflow-x: auto; }
+.device-table { width: 100%; border-collapse: collapse; min-width: 1000px; font-size: 0.82rem; }
+.device-table th { padding: 10px 12px; text-align: left; background: #f2f7f2; color: #557457; border-bottom: 2px solid #b8d8b9; white-space: nowrap; }
+.device-table td { padding: 9px 12px; border-bottom: 1px solid #f3f4f6; color: #4b5563; vertical-align: middle; }
+.device-table tbody tr.scrapped { background: #fefafa; opacity: 0.7; }
+.device-table tbody tr.sel { background: #eef6ee; }
+.device-table tbody tr.fail { background: #fdecec; }
+.device-table tbody tr.fail:hover { background: #fbdfe0; }
+.col-check { width: 40px; text-align: center; }
+.code { font-family: monospace; font-size: 0.76rem; color: #6b7280; }
+.name { font-weight: 600; color: #1f2937; }
+.badge { display: inline-block; padding: 3px 10px; font-size: 0.72rem; font-weight: 600; }
+.st-active { background: #e6f7ef; color: #2d7d4f; } .st-repair { background: #fdf3e0; color: #8b6914; } .st-idle { background: #e8f0f8; color: #3d5f80; } .st-scrapped { background: #fde8e8; color: #9b2c2c; }
+.run-sel { padding: 3px 8px; font-size: 0.72rem; font-weight: 600; border: 1px solid transparent; cursor: pointer; font-family: inherit; }
+.run-online { background: #e7faf1; color: #0b7d4f; } .run-running { background: #e7f1ff; color: #2563eb; } .run-fail { background: #fdecec; color: #dc2626; } .run-calib { background: #fdf5e0; color: #b45309; } .run-offline { background: #eef0f2; color: #6b7280; }
+.ops { display: flex; gap: 4px; align-items: center; }
+.op-edit, .op-del { padding: 4px 10px; border: 1px solid transparent; cursor: pointer; font-size: 0.76rem; font-family: inherit; }
+.op-edit { background: #eef2ff; color: #5b6abf; } .op-del { background: #fde8e8; color: #c0392b; }
+.note { max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #9ca3af; }
+.empty { text-align: center; padding: 50px; color: #b0b0b0; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+.modal { background: #fff; width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto; }
+.modal.sm { max-width: 420px; }
+.modal-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid #eef2ee; }
+.modal-head h3 { margin: 0; }
+.x { border: none; background: #f3f4f6; width: 28px; height: 28px; cursor: pointer; }
+.modal-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.f { display: flex; flex-direction: column; gap: 5px; font-size: 0.82rem; font-weight: 600; color: #4b5563; }
+.f input, .f select, .f textarea { padding: 8px 10px; border: 1px solid #e0e7e0; font-family: inherit; font-size: 0.85rem; }
+.f textarea { resize: vertical; }
+.modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 12px 18px; border-top: 1px solid #eef2ee; }
+.btn.ghost { background: #f3f4f6; color: #6b7280; }
+.btn.pri { background: #4a854d; color: #fff; }
+.btn.danger { background: #c0392b; color: #fff; }
+.toast-container { position: fixed; top: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+.toast-item { padding: 10px 16px; background: #fff; font-size: 0.84rem; border-left: 4px solid #83b785; }
+.toast-success { border-left-color: #4caf84; } .toast-warning { border-left-color: #e8a840; } .toast-info { border-left-color: #5b8ec4; }
+
+/* 删除确认 - 居中且醒目 */
+.del-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+.del-dialog { background: #fff; width: 100%; max-width: 400px; border-radius: 10px; padding: 30px 26px; text-align: center; border: 3px solid #c0392b; box-shadow: 0 12px 50px rgba(0, 0, 0, 0.35); }
+.del-icon { width: 64px; height: 64px; margin: 0 auto 14px; border-radius: 50%; background: #c0392b; color: #fff; font-size: 2.4rem; font-weight: 900; line-height: 64px; text-align: center; }
+.del-title { margin: 0 0 12px; font-size: 1.4rem; color: #c0392b; font-weight: 800; }
+.del-text { margin: 0 0 22px; font-size: 1rem; color: #333; line-height: 1.7; }
+.del-name { color: #c0392b; font-size: 1.1rem; }
+.del-warn { color: #c0392b; font-weight: 700; font-size: 0.95rem; }
+.del-btns { display: flex; gap: 14px; justify-content: center; }
+.del-cancel, .del-confirm { flex: 1; padding: 12px 0; border: none; border-radius: 6px; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+.del-cancel { background: #e5e7eb; color: #4b5563; }
+.del-cancel:hover { background: #d1d5db; }
+.del-confirm { background: #c0392b; color: #fff; }
+.del-confirm:hover { background: #a93226; }
+@media (max-width: 640px) { .row2 { grid-template-columns: 1fr; } }
+</style>
