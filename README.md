@@ -1,6 +1,7 @@
 # T-vue-project
 
 This template should help get you started developing with Vue 3 in Vite.
+(Everything here is produced by AI. This is merely an experimental attempt.)
 
 ## Recommended IDE Setup
 
