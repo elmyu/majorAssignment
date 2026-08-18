@@ -21,7 +21,7 @@ onMounted(() => {
 });
 
 const runCount = computed(() => {
-  const c = { 在线: 0, 运行中: 0, 故障: 0, 校准中: 0, 离线: 0 };
+  const c = Object.fromEntries(RUN_STATUSES.map((s) => [s, 0]));
   devices.value.forEach((d) => {
     if (c[d.runStatus] !== undefined) c[d.runStatus]++;
   });

@@ -1,6 +1,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { getDevices, createReservation, getReservations } from '@/services/api.js';
+import {
+  getCurrentUser,
+  getDevices,
+  createReservation,
+  getReservations,
+  cancelReservation,
+} from '@/services/api.js';
 
 const devices = ref([]);
 const reservations = ref([]);
@@ -131,6 +137,23 @@ function doReserve() {
 }
 
 const fmtTime = (iso) => new Date(iso).toLocaleString('zh-CN');
+
+// ---- 取消预约 ----
+const currentUserName = ref(getCurrentUser()?.name || '');
+
+function doCancel(res) {
+  if (!confirm(`确定取消「${res.deviceName}」的预约吗？`)) return;
+  try {
+    cancelReservation(res.id);
+    showToast('预约已取消');
+    loadAll();
+  } catch (e) {
+    showToast(e.message, 'warning');
+  }
+}
+
+// 医生仅可取消自己的预约（管理员日志中也可由管理员取消）
+const canCancel = (r) => r.doctorName === currentUserName.value;
 </script>
 
 <template>
@@ -248,9 +271,10 @@ const fmtTime = (iso) => new Date(iso).toLocaleString('zh-CN');
               <th>#</th>
               <th>设备</th>
               <th>预约医生</th>
-              <th>预约时间</th>
+                            <th>预约时间</th>
               <th>用途</th>
               <th>提交时间</th>
+              <th>操作</th>
             </tr>
           </thead>
           <tbody>
@@ -263,6 +287,16 @@ const fmtTime = (iso) => new Date(iso).toLocaleString('zh-CN');
               <td>{{ r.timeRange }}</td>
               <td>{{ r.purpose || '-' }}</td>
               <td>{{ fmtTime(r.createdAt) }}</td>
+              <td>
+                <button
+                  v-if="canCancel(r)"
+                  class="cancel-btn"
+                  @click="doCancel(r)"
+                >
+                  取消预约
+                </button>
+                <span v-else class="op-disabled">—</span>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -494,6 +528,22 @@ const fmtTime = (iso) => new Date(iso).toLocaleString('zh-CN');
   font-family: monospace;
   font-size: 0.76rem;
   color: #9ca3af;
+}
+.cancel-btn {
+  padding: 4px 12px;
+  border: 1px solid #f0c8c8;
+  background: #fff;
+  color: #c0392b;
+  font-size: 0.76rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+.cancel-btn:hover {
+  background: #fdeeee;
+}
+.op-disabled {
+  color: #c6cdc6;
+  font-size: 0.78rem;
 }
 .empty {
   text-align: center;

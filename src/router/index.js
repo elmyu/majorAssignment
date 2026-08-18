@@ -1,12 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import { currentUser } from '@/services/api.js';
-
-// 已登录默认落地页
-const homeByRole = {
-  patient: '/patient/health',
-  doctor: '/doctor/records',
-  admin: '/admin/users',
-};
+import { HOME_BY_ROLE } from '@/utils/constants.js';
 
 const routes = [
   {
@@ -19,7 +13,8 @@ const routes = [
     path: '/',
     redirect: () => {
       const u = currentUser.info;
-      return u ? homeByRole[u.role] || '/login' : '/login';
+
+      return u ? HOME_BY_ROLE[u.role] || '/login' : '/login';
     },
   },
   {
@@ -105,9 +100,9 @@ router.beforeEach((to) => {
   if (!u) {
     return { name: 'login', query: { redirect: to.fullPath } };
   }
-  // 角色校验
+    // 角色校验
   if (to.meta.role && to.meta.role !== u.role) {
-    return homeByRole[u.role] || '/login';
+    return HOME_BY_ROLE[u.role] || '/login';
   }
   return true;
 });

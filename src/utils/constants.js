@@ -8,6 +8,30 @@ export const ROLE_LABELS = {
   admin: '管理员',
 };
 
+// 各角色登录后的默认落地页
+export const HOME_BY_ROLE = {
+  patient: '/patient/health',
+  doctor: '/doctor/records',
+  admin: '/admin/users',
+};
+
+// 各角色侧边导航菜单
+export const MENUS = {
+  patient: [
+    { to: '/patient/health', label: '我的健康档案' },
+    { to: '/patient/schedule', label: '医生时间查看' },
+  ],
+  doctor: [
+    { to: '/doctor/records', label: '患者信息调阅' },
+    { to: '/doctor/device', label: '设备台账看板' },
+    { to: '/doctor/reserve', label: '设备预约' },
+  ],
+  admin: [
+    { to: '/admin/users', label: '系统用户管理' },
+    { to: '/admin/devices', label: '设备物资维护' },
+  ],
+};
+
 // 设备运行状态
 export const RUN_STATUSES = ['在线', '运行中', '故障', '校准中', '离线'];
 

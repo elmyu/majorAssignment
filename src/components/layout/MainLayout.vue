@@ -2,7 +2,7 @@
 import { ref, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getCurrentUser, logout } from '@/services/api.js';
-import { ROLE_LABELS } from '@/utils/constants.js';
+import { ROLE_LABELS, MENUS } from '@/utils/constants.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -16,23 +16,7 @@ const MAX_WIDTH = 360;
 const sidebarWidth = ref(Number(localStorage.getItem('sidebarWidth')) || DEFAULT_WIDTH);
 
 // 各角色导航菜单
-const menus = {
-  patient: [
-    { to: '/patient/health', label: '我的健康档案' },
-    { to: '/patient/schedule', label: '医生时间查看' },
-  ],
-  doctor: [
-    { to: '/doctor/records', label: '患者信息调阅' },
-    { to: '/doctor/device', label: '设备台账看板' },
-    { to: '/doctor/reserve', label: '设备预约' },
-  ],
-  admin: [
-    { to: '/admin/users', label: '系统用户管理' },
-    { to: '/admin/devices', label: '设备物资维护' },
-  ],
-};
-
-const currentMenus = menus[user.value?.role] || [];
+const currentMenus = MENUS[user.value?.role] || [];
 const currentRole = ROLE_LABELS[user.value?.role] || '';
 
 function doLogout() {

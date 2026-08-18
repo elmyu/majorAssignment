@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { login, register, resetPassword } from '@/services/api.js';
-import { ROLE_LABELS } from '@/utils/constants.js';
+import { ROLE_LABELS, HOME_BY_ROLE } from '@/utils/constants.js';
 
 const router = useRouter();
 
@@ -37,11 +37,14 @@ const forgotForm = ref({
   account: '',
   name: '',
   phone: '',
+  email: '',
   newPassword: '',
   confirm: '',
 });
 const forgotError = ref('');
 const forgotSuccess = ref('');
+// 找回方式：phone（手机号） / email（邮箱）
+const forgotMethod = ref('phone');
 
 // ---- 模拟验证码（纯前端演示，实际应服务端生成并短信下发）----
 // 注册流程
@@ -80,6 +83,61 @@ function checkCaptcha(field, input) {
   return '';
 }
 
+// 邮箱格式校验
+function isValidEmail(v) {
+  return /^[\w.+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/.test((v || '').trim());
+}
+
+/**
+ * 忘记密码专用：根据找回方式向手机 / 邮箱发送验证码（模拟）。
+ * 手机号方式校验手机号，邮箱方式校验邮箱格式，并给出差异化提示。
+ */
+function sendForgotCaptcha() {
+  const target = forgotMethod.value === 'email' ? forgotForm.value.email : forgotForm.value.phone;
+  const targetLabel = forgotMethod.value === 'email' ? '邮箱' : '手机号';
+  if (forgotMethod.value === 'email') {
+    if (!forgotForm.value.email.trim()) {
+      forgotCaptchaMsg.value = '请先填写邮箱地址';
+      forgotCaptcha.value = '';
+      return;
+    }
+    if (!isValidEmail(forgotForm.value.email)) {
+      forgotCaptchaMsg.value = '邮箱格式不正确，请检查后重新输入';
+      forgotCaptcha.value = '';
+      return;
+    }
+  } else if (!forgotForm.value.phone.trim()) {
+    forgotCaptchaMsg.value = '请先填写手机号';
+    forgotCaptcha.value = '';
+    return;
+  }
+  const code = genCaptcha();
+  forgotCaptcha.value = code;
+  forgotCaptchaInput.value = '';
+  forgotCaptchaMsg.value = `验证码已发送至${targetLabel} ${target}：${code}（演示环境直接展示）`;
+  setTimeout(() => {
+    if (forgotCaptchaMsg.value) forgotCaptchaMsg.value = '';
+  }, 5000);
+}
+
+/** 重置密码：校验通过后调用后端接口 */
+function submitReset(phone, email) {
+  try {
+    // 后端当前以「账号 + 姓名 + 手机号」对接；邮箱找回时 phone 传空，
+    // 待后端支持 email 字段校验后再同步扩展（见注释）。
+    resetPassword({
+      account: forgotForm.value.account,
+      name: forgotForm.value.name,
+      phone,
+      ...(forgotMethod.value === 'email' ? { email } : {}),
+      newPassword: forgotForm.value.newPassword,
+    });
+    forgotSuccess.value = '密码重置成功，请使用新密码登录';
+  } catch (e) {
+    forgotError.value = e.message || '重置失败';
+  }
+}
+
 const roleOptions = [
   { value: 'patient', label: '患者' },
   { value: 'doctor', label: '医生' },
@@ -93,18 +151,27 @@ const demoAccounts = {
   admin: { acc: 'admin01', pwd: 'a123456' },
 };
 
-const homeByRole = { patient: '/patient/health', doctor: '/doctor/records', admin: '/admin/users' };
+const homeByRole = HOME_BY_ROLE;
 
 // ---------- 面板切换 ----------
 function openRegister() {
   mode.value = 'register';
   regError.value = '';
   regSuccess.value = '';
+  regCaptcha.value = '';
+  regCaptchaInput.value = '';
+  regCaptchaMsg.value = '';
 }
 function openForgot() {
   mode.value = 'forgot';
   forgotError.value = '';
   forgotSuccess.value = '';
+  forgotForm.value.phone = '';
+  forgotForm.value.email = '';
+  forgotCaptcha.value = '';
+  forgotCaptchaInput.value = '';
+  forgotCaptchaMsg.value = '';
+  forgotMethod.value = 'phone';
 }
 function backToLogin() {
   mode.value = 'login';
@@ -149,6 +216,11 @@ function doRegister() {
     regError.value = '两次输入的密码不一致';
     return;
   }
+  const capErr = checkCaptcha(regCaptcha, regCaptchaInput);
+  if (capErr) {
+    regError.value = capErr;
+    return;
+  }
   try {
     register({
       role: f.role,
@@ -159,10 +231,13 @@ function doRegister() {
       title: f.title,
       gender: f.gender,
       age: f.age,
-      phone: f.phone,
+            phone: f.phone,
     });
     // 注册成功后自动登录并进入对应首页
     login(f.account.trim(), f.password);
+    regCaptcha.value = '';
+    regCaptchaInput.value = '';
+    regCaptchaMsg.value = '';
     router.push(homeByRole[f.role]);
   } catch (e) {
     regError.value = e.message || '注册失败';
@@ -174,16 +249,42 @@ function doResetPassword() {
   forgotError.value = '';
   forgotSuccess.value = '';
   const f = forgotForm.value;
+  if (!f.account.trim() || !f.name.trim()) {
+    forgotError.value = '请填写完整的账号与姓名';
+    return;
+  }
   if (f.newPassword !== f.confirm) {
     forgotError.value = '两次输入的新密码不一致';
     return;
   }
-  try {
-    resetPassword({ account: f.account, name: f.name, phone: f.phone, newPassword: f.newPassword });
-    forgotSuccess.value = '密码重置成功，请使用新密码登录';
-  } catch (e) {
-    forgotError.value = e.message || '重置失败';
+
+  // 根据找回方式校验对应凭据
+  if (forgotMethod.value === 'email') {
+    if (!f.email.trim()) {
+      forgotError.value = '请填写注册时绑定的邮箱';
+      return;
+    }
+    if (!isValidEmail(f.email)) {
+      forgotError.value = '邮箱格式不正确';
+      return;
+    }
+  } else if (!f.phone.trim()) {
+    forgotError.value = '请填写注册时绑定的手机号';
+    return;
   }
+
+  // 验证码校验
+  const capErr = checkCaptcha(forgotCaptcha, forgotCaptchaInput);
+  if (capErr) {
+    forgotError.value = capErr;
+    return;
+  }
+
+  // 调用后端：后端当前以手机号方式对接；邮箱找回时传空手机号，交由后端扩展
+  submitReset(
+    forgotMethod.value === 'email' ? '' : f.phone.trim(),
+    forgotMethod.value === 'email' ? f.email.trim() : ''
+  );
 }
 </script>
 
@@ -232,8 +333,8 @@ function doResetPassword() {
           <button class="login-btn" @click="doLogin">登录</button>
 
           <div class="auth-links">
-            <a class="link" @click="openForgot">忘记密码？</a>
             <a class="link" @click="openRegister">没有账号？去注册</a>
+            <a class="link" @click="openForgot">忘记密码？</a>
           </div>
 
           <div class="quick-fill">
@@ -300,7 +401,7 @@ function doResetPassword() {
               placeholder="请输入 11 位手机号"
             />
           </label>
-          <label class="field">
+                    <label class="field">
             <span>密码 <em class="req">*</em>（至少 6 位）</span>
             <input v-model="regForm.password" type="password" placeholder="设置登录密码" />
           </label>
@@ -309,6 +410,22 @@ function doResetPassword() {
             <input v-model="regForm.confirm" type="password" placeholder="再次输入密码" />
           </label>
 
+          <label class="field">
+            <span>短信验证码 <em class="req">*</em>（演示环境直接显示）</span>
+            <div class="captcha-row">
+              <input v-model="regCaptchaInput" type="text" maxlength="4" placeholder="请输入验证码" />
+              <button
+                type="button"
+                class="captcha-btn"
+                :disabled="!!regCaptcha"
+                @click="sendCaptcha(regCaptcha, regCaptchaMsg)"
+              >
+                {{ regCaptcha ? '已发送' : '获取验证码' }}
+              </button>
+            </div>
+          </label>
+          <p v-if="regCaptchaMsg" class="info">{{ regCaptchaMsg }}</p>
+
           <p v-if="regError" class="error">{{ regError }}</p>
           <p v-if="regSuccess" class="success">{{ regSuccess }}</p>
 
@@ -316,12 +433,12 @@ function doResetPassword() {
           <div class="auth-links">
             <a class="link" @click="backToLogin">← 返回登录</a>
           </div>
-        </template>
+                </template>
 
         <!-- ======== 忘记密码 ======== -->
         <template v-else>
           <h2>重置密码</h2>
-          <p class="desc">通过「账号 + 姓名 + 手机号」验证身份后设置新密码。</p>
+          <p class="desc">通过「账号 + 姓名」确认身份后，选择以手机号或邮箱接收验证码来重置密码。</p>
 
           <label class="field">
             <span>账号 <em class="req">*</em></span>
@@ -331,15 +448,48 @@ function doResetPassword() {
             <span>姓名 <em class="req">*</em></span>
             <input v-model="forgotForm.name" type="text" placeholder="请输入注册时填写的姓名" />
           </label>
-          <label class="field">
+
+          <!-- 找回方式选择 -->
+          <div class="method-select">
+            <button
+              type="button"
+              class="method-item"
+              :class="{ active: forgotMethod === 'phone' }"
+              @click="forgotMethod = 'phone'; forgotCaptcha = ''; forgotCaptchaInput = ''; forgotCaptchaMsg = ''"
+            >
+              手机号找回
+            </button>
+            <button
+              type="button"
+              class="method-item"
+              :class="{ active: forgotMethod === 'email' }"
+              @click="forgotMethod = 'email'; forgotCaptcha = ''; forgotCaptchaInput = ''; forgotCaptchaMsg = ''"
+            >
+              邮箱找回
+            </button>
+          </div>
+
+          <!-- 手机号找回 -->
+          <label v-if="forgotMethod === 'phone'" class="field">
             <span>手机号 <em class="req">*</em></span>
             <input
               v-model="forgotForm.phone"
               type="tel"
               maxlength="11"
-              placeholder="请输入注册时填写的手机号"
+              placeholder="请输入注册时绑定的手机号"
             />
           </label>
+
+          <!-- 邮箱找回 -->
+          <label v-else class="field">
+            <span>邮箱 <em class="req">*</em></span>
+            <input
+              v-model="forgotForm.email"
+              type="email"
+              placeholder="请输入注册时绑定的邮箱"
+            />
+          </label>
+
           <label class="field">
             <span>新密码 <em class="req">*</em>（至少 6 位）</span>
             <input v-model="forgotForm.newPassword" type="password" placeholder="设置新密码" />
@@ -348,6 +498,30 @@ function doResetPassword() {
             <span>确认新密码 <em class="req">*</em></span>
             <input v-model="forgotForm.confirm" type="password" placeholder="再次输入新密码" />
           </label>
+
+          <!-- 验证码（按方式发送至手机 / 邮箱） -->
+          <label class="field">
+            <span
+              >验证码 <em class="req">*</em>（{{ forgotMethod === 'email' ? '演示环境邮箱直接显示' : '演示环境短信直接显示' }}）</span
+            >
+            <div class="captcha-row">
+              <input
+                v-model="forgotCaptchaInput"
+                type="text"
+                maxlength="4"
+                placeholder="请输入验证码"
+              />
+              <button
+                type="button"
+                class="captcha-btn"
+                :disabled="!!forgotCaptcha"
+                @click="sendForgotCaptcha"
+              >
+                {{ forgotCaptcha ? '已发送' : '获取验证码' }}
+              </button>
+            </div>
+          </label>
+          <p v-if="forgotCaptchaMsg" class="info">{{ forgotCaptchaMsg }}</p>
 
           <p v-if="forgotError" class="error">{{ forgotError }}</p>
           <p v-if="forgotSuccess" class="success">{{ forgotSuccess }}</p>
@@ -521,6 +695,65 @@ function doResetPassword() {
   color: #c0392b;
   font-size: 0.82rem;
   margin: 0 0 10px;
+}
+.info {
+  color: #3d7d5d;
+  font-size: 0.82rem;
+  margin: -6px 0 10px;
+}
+.captcha-row {
+  display: flex;
+  gap: 8px;
+}
+.captcha-row input {
+  flex: 1;
+  min-width: 0;
+}
+.captcha-btn {
+  padding: 10px 14px;
+  border: 1px solid #9cc39f;
+  background: #eef6ee;
+  color: #2c6e33;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.captcha-btn:hover {
+  background: #dcefdc;
+}
+.captcha-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.method-select {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.method-item {
+  padding: 9px 0;
+  border: 1px solid #dde7dd;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #5a6d5d;
+  background: #fbfdfb;
+  font-family: inherit;
+  text-align: center;
+  transition: all 0.15s;
+}
+.method-item:hover {
+  border-color: #9cc39f;
+  background: #f0f8f0;
+}
+.method-item.active {
+  background: linear-gradient(135deg, #4a9d50, #35833c);
+  color: #fff;
+  border-color: #35833c;
 }
 .success {
   color: #2e8b57;

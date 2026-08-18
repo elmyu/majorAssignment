@@ -1,7 +1,8 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { getPatientsForDoctor, getSignalsOfPatient } from '@/services/api.js';
 import { fmtDate } from '@/utils/format.js';
+import { SIGNAL_KEYS, SIGNAL_LABELS, SIGNAL_UNITS, isNormal } from '@/utils/signals.js';
 
 const patients = ref([]);
 const loading = ref(true);
@@ -37,6 +38,23 @@ function viewSignals(patient) {
     signalLoading.value = false;
   }
 }
+
+// ---- 信号统计（平均值 & 异常判断）----
+const avg = (key) => {
+  if (!signals.value.length) return '-';
+  const sum = signals.value.reduce((acc, s) => acc + Number(s[key]), 0);
+  return (sum / signals.value.length).toFixed(1);
+};
+const summaryItems = computed(() => {
+  if (!signals.value.length) return [];
+  return SIGNAL_KEYS.map((key) => ({
+    key,
+    label: SIGNAL_LABELS[key],
+    avg: signals.value.length ? avg(key) : '-',
+    unit: SIGNAL_UNITS[key],
+    abnormal: signals.value.filter((s) => !isNormal(key, s[key])).length,
+  }));
+});
 </script>
 
 <template>
@@ -75,13 +93,34 @@ function viewSignals(patient) {
         </ul>
       </section>
 
-      <!-- 信号记录 -->
+            <!-- 信号记录 -->
       <section class="detail-card">
         <template v-if="selected">
           <div class="detail-head">
             <h3>{{ selected.name }} 的生理信号记录</h3>
             <span class="badge">{{ signals.length }} 条</span>
           </div>
+
+          <!-- 患者基本信息 -->
+          <div class="base-info">
+            <span>门诊号：{{ selected.medicalNo }}</span>
+            <span>性别：{{ selected.gender }}</span>
+            <span>年龄：{{ selected.age }}岁</span>
+            <span>血型：{{ selected.bloodType }}</span>
+            <span>手机号：{{ selected.phone || '-' }}</span>
+          </div>
+
+          <!-- 信号统计摘要 -->
+          <div v-if="signals.length" class="sum-grid">
+            <div v-for="item in summaryItems" :key="item.key" class="sum-item">
+              <span class="sum-label">{{ item.label }}</span>
+              <b class="sum-avg">{{ item.avg }} <small>{{ item.unit }}</small></b>
+              <span class="sum-abn" :class="{ warn: item.abnormal > 0 }">
+                异常 {{ item.abnormal }} 条
+              </span>
+            </div>
+          </div>
+
           <div v-if="signalLoading" class="empty">加载中...</div>
           <div v-else-if="signalError" class="empty error">{{ signalError }}</div>
           <div v-else-if="signals.length" class="table-wrap">
@@ -210,6 +249,52 @@ function viewSignals(patient) {
   padding: 2px 10px;
   font-size: 0.8rem;
   font-weight: 600;
+}
+.base-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-size: 0.82rem;
+  color: #4b5563;
+  background: #f8fbf8;
+  border: 1px solid #e8f0e8;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+.sum-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.sum-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #eef2ee;
+  border-radius: 6px;
+}
+.sum-label {
+  font-size: 0.74rem;
+  color: #8aa08c;
+}
+.sum-avg {
+  font-size: 1rem;
+  color: #1f2937;
+}
+.sum-avg small {
+  font-weight: 400;
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+.sum-abn {
+  font-size: 0.7rem;
+  color: #2d7d4f;
+}
+.sum-abn.warn {
+  color: #c0392b;
 }
 .table-wrap {
   overflow-x: auto;

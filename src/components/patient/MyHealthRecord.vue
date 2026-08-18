@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { getMySignals } from '@/services/api.js';
 import { fmtDate } from '@/utils/format.js';
+import { isNormal, rowAbnormal } from '@/utils/signals.js';
 
 const patient = ref(null);
 const records = ref([]);
@@ -30,24 +31,21 @@ const filtered = computed(() => {
   return records.value.filter((r) => now - new Date(r.recordTime).getTime() <= days * 86400000);
 });
 
-// 正常参考范围
-const refRange = {
-  heartRate: [60, 100],
-  sbp: [90, 140],
-  dbp: [60, 90],
-  spo2: [95, 100],
-  temp: [36.0, 37.4],
-};
-const isNormal = (key, v) => {
-  const [lo, hi] = refRange[key];
-  return v >= lo && v <= hi;
-};
-const rowAbnormal = (r) =>
-  !isNormal('heartRate', r.heartRate) ||
-  !isNormal('sbp', r.sbp) ||
-  !isNormal('dbp', r.dbp) ||
-  !isNormal('spo2', r.spo2) ||
-  !isNormal('temp', r.temp);
+// ---- 最近一次测量概览 ----
+const latest = computed(() => (records.value.length ? records.value[0] : null));
+const abnormalCount = computed(() => records.value.filter(rowAbnormal).length);
+const totalCount = computed(() => records.value.length);
+const latestSummary = computed(() => {
+  const r = latest.value;
+  if (!r) return [];
+  return [
+    { key: '心率', val: `${r.heartRate} bpm`, ok: isNormal('heartRate', r.heartRate) },
+    { key: '收缩压', val: `${r.sbp} mmHg`, ok: isNormal('sbp', r.sbp) },
+    { key: '舒张压', val: `${r.dbp} mmHg`, ok: isNormal('dbp', r.dbp) },
+    { key: '血氧', val: `${r.spo2}%`, ok: isNormal('spo2', r.spo2) },
+    { key: '体温', val: `${r.temp}℃`, ok: isNormal('temp', r.temp) },
+  ];
+});
 </script>
 
 <template>
@@ -66,7 +64,27 @@ const rowAbnormal = (r) =>
       </div>
     </section>
 
-    <div class="privacy-banner">隐私提示：您仅可查看本人的生理信号历史记录。</div>
+        <div class="privacy-banner">隐私提示：您仅可查看本人的生理信号历史记录。</div>
+
+    <!-- 最近一次测量概览 -->
+    <section v-if="latest" class="overview">
+      <div class="ov-head">
+        <h3>最近一次测量概览</h3>
+        <span class="ov-time">{{ fmtDate(latest.recordTime) }}</span>
+      </div>
+      <div class="ov-grid">
+        <div v-for="item in latestSummary" :key="item.key" class="ov-item">
+          <span class="ov-label">{{ item.key }}</span>
+          <b class="ov-val" :class="{ abn: !item.ok }">{{ item.val }}</b>
+        </div>
+      </div>
+      <div class="ov-footer">
+        <span
+          >历史记录 <b>{{ totalCount }}</b> 条，其中异常记录
+          <b :class="{ abn: abnormalCount > 0 }">{{ abnormalCount }}</b> 条</span
+        >
+      </div>
+    </section>
 
     <section class="table-card">
       <div class="toolbar">
@@ -148,6 +166,62 @@ const rowAbnormal = (r) =>
   color: #3d6b40;
   border: 1px solid #d0e4d0;
   font-size: 0.85rem;
+}
+.overview {
+  background: #fff;
+  border: 1px solid #eef2ee;
+  padding: 14px 18px;
+}
+.ov-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.ov-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #1f2937;
+}
+.ov-time {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+.ov-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+.ov-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: #f8fbf8;
+  border: 1px solid #e8f0e8;
+  border-radius: 6px;
+}
+.ov-label {
+  font-size: 0.76rem;
+  color: #8aa08c;
+}
+.ov-val {
+  font-size: 1rem;
+  color: #1f2937;
+}
+.ov-val.abn {
+  color: #c0392b;
+}
+.ov-footer {
+  margin-top: 12px;
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+.ov-footer b {
+  color: #4a854d;
+}
+.ov-footer b.abn {
+  color: #c0392b;
 }
 .table-card {
   background: #fff;

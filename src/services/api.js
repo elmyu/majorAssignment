@@ -225,6 +225,19 @@ export function getReservations() {
   return reservations;
 }
 
+// 取消预约：仅预约创建者本人（或管理员）可取消
+export function cancelReservation(id) {
+  const u = assertRole(['doctor', 'admin']);
+  const reservations = tables.reservations();
+  const target = reservations.find((r) => r.id === id);
+  if (!target) throw new BizError('该预约记录不存在');
+  if (u.role !== 'admin' && target.doctorId !== u.id) {
+    throw new PermissionError('您只能取消本人创建的预约');
+  }
+  tables.saveReservations(reservations.filter((r) => r.id !== id));
+  return true;
+}
+
 // ==================== 管理员视角接口 ====================
 // 系统用户管理：增删改查医生和患者账户
 export function listUsers(roleFilter) {
