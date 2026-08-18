@@ -5,15 +5,19 @@ module.exports = {
     node: true,
     es2021: true,
   },
+  parser: 'vue-eslint-parser',
   parserOptions: {
     ecmaVersion: 2021,
     sourceType: 'module',
   },
-  extends: ['eslint:recommended', 'prettier'],
-  plugins: ['prettier'],
+  extends: ['eslint:recommended', 'plugin:vue/recommended', 'prettier'],
+  plugins: ['vue', 'prettier'],
   rules: {
-    'prettier/prettier': 'error',
-    // project-specific rule examples (non-invasive)
+    'prettier/prettier': ['error', { endOfLine: 'auto' }],
     'no-console': 'off',
+    'no-unused-vars': 'off',
+    'no-empty': 'off',
+    'vue/multi-word-component-names': 'off',
+    'vue/attributes-order': 'off',
   },
 };
