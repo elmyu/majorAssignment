@@ -48,10 +48,6 @@ __screenshots__/
 Thumbs.db
 Desktop.ini
 
-# IDE 个人配置（保留团队共享的 extensions.json）
-.idea
-.vscode/*
-!.vscode/extensions.json
 
 # 本地临时/缓存
 .cache/
