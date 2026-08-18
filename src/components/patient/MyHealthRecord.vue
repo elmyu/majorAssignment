@@ -70,10 +70,10 @@ const latestSummary = computed(() => {
     <section class="patient-card" v-if="patient">
       <div class="base">
         <h3>{{ patient.name }}</h3>
-        <p>
-          门诊号：{{ patient.medicalNo }} &nbsp; 性别：{{ patient.gender }} &nbsp; 年龄：{{
-            patient.age
-          }}岁 &nbsp; 血型：{{ patient.bloodType }}
+                <p>
+          门诊号：{{ patient.medicalNo }}　性别：{{ patient.gender }}　年龄：{{ patient.age }}岁　血型：{{
+            patient.bloodType
+          }}
         </p>
       </div>
       <div class="record-count">
@@ -122,35 +122,37 @@ const latestSummary = computed(() => {
           </select>
         </div>
       </div>
-      <div v-if="loading" class="empty">加载中...</div>
+            <div v-if="loading" class="empty">加载中...</div>
       <div v-else-if="errorMsg" class="empty error">{{ errorMsg }}</div>
-      <table v-else-if="filtered.length" class="sig-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>采集时间</th>
-            <th>心率</th>
-            <th>收缩压</th>
-            <th>舒张压</th>
-            <th>血氧</th>
-            <th>体温</th>
-            <th>备注</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(r, i) in filtered" :key="r.id" :class="{ abn: rowAbnormal(r) }">
-            <td>{{ i + 1 }}</td>
-            <td>{{ fmtDate(r.recordTime) }}</td>
-            <td>{{ r.heartRate }} bpm</td>
-            <td>{{ r.sbp }} mmHg</td>
-            <td>{{ r.dbp }} mmHg</td>
-            <td>{{ r.spo2 }}%</td>
-            <td>{{ r.temp }}℃</td>
-            <td>{{ r.note || '-' }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <div v-else class="empty">当前筛选范围内暂无记录</div>
+      <div v-else class="table-wrap">
+        <table v-if="filtered.length" class="sig-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>采集时间</th>
+              <th>心率</th>
+              <th>收缩压</th>
+              <th>舒张压</th>
+              <th>血氧</th>
+              <th>体温</th>
+              <th>备注</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(r, i) in filtered" :key="r.id" :class="{ abn: rowAbnormal(r) }">
+              <td>{{ i + 1 }}</td>
+              <td>{{ fmtDate(r.recordTime) }}</td>
+              <td>{{ r.heartRate }} bpm</td>
+              <td>{{ r.sbp }} mmHg</td>
+              <td>{{ r.dbp }} mmHg</td>
+              <td>{{ r.spo2 }}%</td>
+              <td>{{ r.temp }}℃</td>
+              <td>{{ r.note || '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div v-else class="empty">当前筛选范围内暂无记录</div>
+      </div>
     </section>
   </div>
 </template>
@@ -165,9 +167,16 @@ const latestSummary = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
   padding: 16px 20px;
   background: #fff;
   border: 1px solid #eef2ee;
+  overflow: hidden;
+}
+.base {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 .base h3 {
   margin: 0;
@@ -178,10 +187,15 @@ const latestSummary = computed(() => {
   margin: 6px 0 0;
   color: #6b7280;
   font-size: 0.85rem;
+  line-height: 1.6;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 .record-count {
   font-size: 0.85rem;
   color: #4b5563;
+  white-space: nowrap;
 }
 .record-count b {
   color: #4a854d;
@@ -202,6 +216,8 @@ const latestSummary = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
   margin-bottom: 12px;
 }
 .ov-head h3 {
@@ -253,13 +269,19 @@ const latestSummary = computed(() => {
   background: #fff;
   border: 1px solid #eef2ee;
   overflow: hidden;
+  min-width: 0;
 }
 .toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
   padding: 14px 16px;
   border-bottom: 1px solid #eef2ee;
+}
+.table-wrap {
+  overflow-x: auto;
 }
 .toolbar h3 {
   margin: 0;
@@ -276,6 +298,7 @@ const latestSummary = computed(() => {
   display: flex;
   align-items: flex-end;
   gap: 8px;
+  flex-wrap: wrap;
 }
 .date-group label {
   display: flex;
@@ -291,6 +314,9 @@ const latestSummary = computed(() => {
   font-size: 0.82rem;
   font-family: inherit;
   background: #fff;
+  width: 140px;
+  max-width: 140px;
+  box-sizing: border-box;
 }
 .clear-date {
   padding: 6px 12px;
@@ -318,6 +344,8 @@ const latestSummary = computed(() => {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.85rem;
+  min-width: 720px;
+  white-space: nowrap;
 }
 .sig-table th {
   padding: 10px 12px;
