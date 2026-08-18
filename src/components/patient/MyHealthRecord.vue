@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getMySignals } from '../../services/api.js'
+import { getMySignals } from '@/services/api.js'
+import { fmtDate } from '@/utils/format.js'
 
 const patient = ref(null)
 const records = ref([])
@@ -39,11 +40,6 @@ const isNormal = (key, v) => {
 }
 const rowAbnormal = (r) =>
   !isNormal('heartRate', r.heartRate) || !isNormal('sbp', r.sbp) || !isNormal('dbp', r.dbp) || !isNormal('spo2', r.spo2) || !isNormal('temp', r.temp)
-
-const fmtDate = (iso) => {
-  const d = new Date(iso)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-}
 </script>
 
 <template>

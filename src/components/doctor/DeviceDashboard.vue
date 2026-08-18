@@ -1,6 +1,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getDevices } from '../../services/api.js'
+import { getDevices } from '@/services/api.js'
+import { RUN_STATUSES, RUN_STATUS_CLASS, USE_STATUSES } from '@/utils/constants.js'
+import { fmtPrice } from '@/utils/format.js'
 
 const devices = ref([])
 const loading = ref(true)
@@ -32,12 +34,7 @@ const filtered = computed(() => {
   })
 })
 
-const runClass = (rs) => {
-  const map = { '在线': 'run-online', '运行中': 'run-running', '故障': 'run-fail', '校准中': 'run-calib', '离线': 'run-offline' }
-  return map[rs] || 'run-offline'
-}
-
-const fmtPrice = (p) => Number(p || 0).toLocaleString('zh-CN')
+const runClass = (rs) => RUN_STATUS_CLASS[rs] || 'run-offline'
 </script>
 
 <template>
@@ -46,20 +43,8 @@ const fmtPrice = (p) => Number(p || 0).toLocaleString('zh-CN')
 
     <!-- 运行状态汇总 -->
     <section class="run-summary">
-      <div class="run-item" :class="{ sum_active: runFilter === '在线' }" @click="runFilter = runFilter === '在线' ? '' : '在线'">
-        在线 <b>{{ runCount['在线'] }}</b>
-      </div>
-      <div class="run-item" :class="{ sum_active: runFilter === '运行中' }" @click="runFilter = runFilter === '运行中' ? '' : '运行中'">
-        运行中 <b>{{ runCount['运行中'] }}</b>
-      </div>
-      <div class="run-item" :class="{ sum_active: runFilter === '故障' }" @click="runFilter = runFilter === '故障' ? '' : '故障'">
-        故障 <b>{{ runCount['故障'] }}</b>
-      </div>
-      <div class="run-item" :class="{ sum_active: runFilter === '校准中' }" @click="runFilter = runFilter === '校准中' ? '' : '校准中'">
-        校准中 <b>{{ runCount['校准中'] }}</b>
-      </div>
-      <div class="run-item" :class="{ sum_active: runFilter === '离线' }" @click="runFilter = runFilter === '离线' ? '' : '离线'">
-        离线 <b>{{ runCount['离线'] }}</b>
+      <div v-for="rs in RUN_STATUSES" :key="rs" class="run-item" :class="{ sum_active: runFilter === rs }" @click="runFilter = runFilter === rs ? '' : rs">
+        {{ rs }} <b>{{ runCount[rs] }}</b>
       </div>
     </section>
 
@@ -69,10 +54,7 @@ const fmtPrice = (p) => Number(p || 0).toLocaleString('zh-CN')
         <label>使用状态：
           <select v-model="statusFilter">
             <option value="">全部</option>
-            <option value="正常使用">正常使用</option>
-            <option value="维修中">维修中</option>
-            <option value="闲置">闲置</option>
-            <option value="已报废">已报废</option>
+            <option v-for="s in USE_STATUSES" :key="s" :value="s">{{ s }}</option>
           </select>
         </label>
         <span class="count">共 <b>{{ filtered.length }}</b> 台</span>

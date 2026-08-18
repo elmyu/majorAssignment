@@ -1,6 +1,8 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
-import { getDevices, createDevice, updateDevice, deleteDevice } from '../../services/api.js'
+import { getDevices, createDevice, updateDevice, deleteDevice } from '@/services/api.js'
+import { RUN_STATUSES, RUN_STATUS_CLASS, USE_STATUSES, DEPARTMENTS } from '@/utils/constants.js'
+import { fmtPrice } from '@/utils/format.js'
 
 const devices = ref([])
 const searchQuery = ref('')
@@ -22,8 +24,8 @@ const dragRect = ref(null)
 
 const form = reactive({ name: '', model: '', department: '', purchaseDate: '', price: null, status: '正常使用', runStatus: '在线', note: '' })
 const batchRows = ref([])
-const departmentOptions = ['心内科', '超声科', 'ICU重症监护室', '呼吸科', '普外科', '肾内科', '麻醉科', '放射科', '急诊科', '骨科', '神经内科', '儿科', '妇产科', '消化内科', '内分泌科', '检验科', '病理科', '康复科', '口腔科', '眼科']
-const runStatusOptions = ['在线', '运行中', '故障', '校准中', '离线']
+const departmentOptions = DEPARTMENTS
+const runStatusOptions = RUN_STATUSES
 
 const activeCount = computed(() => devices.value.filter(d => d.status === '正常使用').length)
 const repairCount = computed(() => devices.value.filter(d => d.status === '维修中').length)
@@ -38,9 +40,8 @@ const filteredDevices = computed(() => {
   return [...r].sort((a, b) => new Date(b.purchaseDate) - new Date(a.purchaseDate))
 })
 
-const fmtPrice = (p) => Number(p || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2 })
 const stClass = (s) => ({ '正常使用': 'active', '维修中': 'repair', '闲置': 'idle', '已报废': 'scrapped' }[s] || 'idle')
-const runClass = (r) => ({ '在线': 'online', '运行中': 'running', '故障': 'fail', '校准中': 'calib', '离线': 'offline' }[r] || 'offline')
+const runClass = (r) => RUN_STATUS_CLASS[r] || 'offline'
 
 const showToast = (m, t = 'info') => {
   const id = Date.now() + Math.random()
@@ -213,7 +214,7 @@ function executeBatchDelete() {
           </div>
           <div class="row2">
             <label class="f">价格(元) *<input type="number" v-model.number="form.price" min="0" step="0.01" required /></label>
-            <label class="f">使用状态<select v-model="form.status"><option v-for="s in ['正常使用', '维修中', '闲置', '已报废']" :key="s" :value="s">{{ s }}</option></select></label>
+            <label class="f">使用状态<select v-model="form.status"><option v-for="s in USE_STATUSES" :key="s" :value="s">{{ s }}</option></select></label>
           </div>
           <label class="f">运行状态<select v-model="form.runStatus"><option v-for="r in runStatusOptions" :key="r" :value="r">{{ r }}</option></select></label>
           <label class="f">备注<textarea v-model="form.note" maxlength="200" rows="2"></textarea></label>
@@ -235,7 +236,7 @@ function executeBatchDelete() {
               <select v-model="row.department"><option value="">科室</option><option v-for="d in departmentOptions" :key="d" :value="d">{{ d }}</option></select>
               <input type="date" v-model="row.purchaseDate" />
               <input type="number" v-model.number="row.price" min="0" step="0.01" placeholder="0.00" />
-              <select v-model="row.status"><option v-for="s in ['正常使用', '维修中', '闲置', '已报废']" :key="s" :value="s">{{ s }}</option></select>
+              <select v-model="row.status"><option v-for="s in USE_STATUSES" :key="s" :value="s">{{ s }}</option></select>
               <input v-model="row.note" placeholder="备注" />
               <button class="row-del" type="button" @click="removeRow(i)">✕</button>
             </div>

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getSchedules } from '../../services/api.js'
+import { getSchedules } from '@/services/api.js'
 
 const schedules = ref([])
 const loading = ref(true)

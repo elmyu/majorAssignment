@@ -1,7 +1,8 @@
 <script setup>
 import { ref, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getCurrentUser, logout } from '../../services/api.js'
+import { getCurrentUser, logout } from '@/services/api.js'
+import { ROLE_LABELS } from '@/utils/constants.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -13,8 +14,6 @@ const DEFAULT_WIDTH = 200
 const MIN_WIDTH = 140
 const MAX_WIDTH = 360
 const sidebarWidth = ref(Number(localStorage.getItem('sidebarWidth')) || DEFAULT_WIDTH)
-
-const roleLabels = { patient: '患者', doctor: '医生', admin: '管理员' }
 
 // 各角色导航菜单
 const menus = {
@@ -34,7 +33,7 @@ const menus = {
 }
 
 const currentMenus = menus[user.value?.role] || []
-const currentRole = roleLabels[user.value?.role] || ''
+const currentRole = ROLE_LABELS[user.value?.role] || ''
 
 function doLogout() {
   logout()

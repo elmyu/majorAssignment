@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getDevices, createReservation, getReservations } from '../../services/api.js'
+import { getDevices, createReservation, getReservations } from '@/services/api.js'
 
 const devices = ref([])
 const reservations = ref([])
@@ -34,8 +34,7 @@ const slotOptions = [
   { value: '自定义', range: '' },
 ]
 
-// 预约时间段选项联动
-const defDepts = ['心内科', '超声科', 'ICU重症监护室', '呼吸科', '普外科', '肾内科', '麻醉科', '放射科', '急诊科', '骨科', '儿科']
+// 预约部门列表（从设备数据动态生成）
 const deptList = computed(() => {
   const s = new Set(devices.value.map((d) => d.department).filter(Boolean))
   return [...s]

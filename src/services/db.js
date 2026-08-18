@@ -3,6 +3,8 @@
 // 说明：若生产环境接入真实后端，仅需替换 api.js 中的网络请求实现，
 // 组件层无需改动。
 
+import { genId } from '@/utils/format.js'
+
 const DB_KEYS = {
   users: 'hms_users',
   signals: 'hms_signals',
@@ -68,9 +70,8 @@ function seedSignals() {
       d.setDate(d.getDate() - ((i * 3) % 26) - 1)
       d.setHours(8 + (i % 11), (i * 7) % 60, 0, 0)
       const fluctuation = (v) => Math.round(v + (Math.random() - 0.5) * 8)
-      const int = Date.now() + Math.random()
       records.push({
-        id: `sig_${int}`,
+        id: genId('sig'),
         patientId: row.p,
         recordTime: d.toISOString(),
         heartRate: fluctuation(row.heart),
@@ -90,7 +91,6 @@ function seedSchedules() {
   const doctors = [
     'u_doc01', 'u_doc02', 'u_doc03', 'u_doc04',
   ]
-  const patients = null // schedule 与患者无关，医生出诊时间对所有人可见
   const rows = []
   const today = new Date()
   const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
@@ -103,7 +103,7 @@ function seedSchedules() {
         date.setDate(date.getDate() + (offDay - today.getDay() + 7) % 7 + week * 7)
         const morning = slot % 2 === 0
         rows.push({
-          id: `sched_${Date.now()}_${Math.random()}`,
+          id: genId('sched'),
           doctorId: did,
           date: date.toISOString().split('T')[0],
           weekday: dayNames[date.getDay()],

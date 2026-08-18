@@ -1,5 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import { currentUser } from '../services/api.js'
+import { currentUser } from '@/services/api.js'
 
 // 已登录默认落地页
 const homeByRole = {
@@ -12,7 +12,7 @@ const routes = [
   {
     path: '/login',
     name: 'login',
-    component: () => import('../components/auth/LoginPage.vue'),
+    component: () => import('@/components/auth/LoginPage.vue'),
     meta: { public: true },
   },
   {
@@ -24,32 +24,32 @@ const routes = [
   },
   {
     path: '/patient',
-    component: () => import('../components/layout/MainLayout.vue'),
+    component: () => import('@/components/layout/MainLayout.vue'),
     meta: { role: 'patient' },
     children: [
-      { path: 'health', name: 'patientHealth', component: () => import('../components/patient/MyHealthRecord.vue'), meta: { title: '我的健康档案' } },
-      { path: 'schedule', name: 'patientSchedule', component: () => import('../components/patient/DoctorScheduleView.vue'), meta: { title: '医生时间查看' } },
+      { path: 'health', name: 'patientHealth', component: () => import('@/components/patient/MyHealthRecord.vue'), meta: { title: '我的健康档案' } },
+      { path: 'schedule', name: 'patientSchedule', component: () => import('@/components/patient/DoctorScheduleView.vue'), meta: { title: '医生时间查看' } },
       { path: '', redirect: '/patient/health' },
     ],
   },
   {
     path: '/doctor',
-    component: () => import('../components/layout/MainLayout.vue'),
+    component: () => import('@/components/layout/MainLayout.vue'),
     meta: { role: 'doctor' },
     children: [
-      { path: 'records', name: 'doctorRecords', component: () => import('../components/doctor/PatientRecords.vue'), meta: { title: '患者信息调阅' } },
-      { path: 'device', name: 'doctorDevice', component: () => import('../components/doctor/DeviceDashboard.vue'), meta: { title: '设备台账看板' } },
-      { path: 'reserve', name: 'doctorReserve', component: () => import('../components/doctor/DeviceReserve.vue'), meta: { title: '设备预约' } },
+      { path: 'records', name: 'doctorRecords', component: () => import('@/components/doctor/PatientRecords.vue'), meta: { title: '患者信息调阅' } },
+      { path: 'device', name: 'doctorDevice', component: () => import('@/components/doctor/DeviceDashboard.vue'), meta: { title: '设备台账看板' } },
+      { path: 'reserve', name: 'doctorReserve', component: () => import('@/components/doctor/DeviceReserve.vue'), meta: { title: '设备预约' } },
       { path: '', redirect: '/doctor/records' },
     ],
   },
   {
     path: '/admin',
-    component: () => import('../components/layout/MainLayout.vue'),
+    component: () => import('@/components/layout/MainLayout.vue'),
     meta: { role: 'admin' },
     children: [
-      { path: 'users', name: 'adminUsers', component: () => import('../components/admin/UserManage.vue'), meta: { title: '系统用户管理' } },
-      { path: 'devices', name: 'adminDevices', component: () => import('../components/admin/DeviceManage.vue'), meta: { title: '设备物资维护' } },
+      { path: 'users', name: 'adminUsers', component: () => import('@/components/admin/UserManage.vue'), meta: { title: '系统用户管理' } },
+      { path: 'devices', name: 'adminDevices', component: () => import('@/components/admin/DeviceManage.vue'), meta: { title: '设备物资维护' } },
       { path: '', redirect: '/admin/users' },
     ],
   },

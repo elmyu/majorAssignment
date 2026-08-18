@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { listUsers, createUser, updateUser, deleteUser } from '../../services/api.js'
+import { listUsers, createUser, updateUser, deleteUser } from '@/services/api.js'
+import { ROLE_LABELS } from '@/utils/constants.js'
 
 const users = ref([])
 const loading = ref(true)
@@ -38,8 +39,6 @@ const displayed = computed(() => {
 })
 const displayedDeletable = computed(() => displayed.value.filter(u => u.role !== 'admin'))
 const batchCount = computed(() => selectedIds.value.size)
-
-const roleLabel = { patient: '患者', doctor: '医生', admin: '管理员' }
 
 // ---- 拖拽框选 ----
 function bindDrag() { document.addEventListener('mousemove', onDragMove); document.addEventListener('mouseup', onDragUp) }
@@ -140,7 +139,7 @@ function executeBatchDelete() {
               <td class="col-check"><input type="checkbox" :disabled="u.role === 'admin'" :checked="selectedIds.has(u.id)" @change="toggleSelect(u.id)" /></td>
               <td class="mono">{{ u.account }}</td>
               <td class="name">{{ u.name }}</td>
-              <td><span class="role-badge" :class="'role-' + u.role">{{ roleLabel[u.role] }}</span></td>
+              <td><span class="role-badge" :class="'role-' + u.role">{{ ROLE_LABELS[u.role] }}</span></td>
               <td>{{ u.role === 'doctor' ? u.dept : (u.gender || '-') }}</td>
               <td>{{ u.role === 'doctor' ? u.title : (u.age ? u.age + '岁' : '-') }}</td>
               <td>{{ u.phone || '-' }}</td>

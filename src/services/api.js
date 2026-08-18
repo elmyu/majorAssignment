@@ -5,6 +5,7 @@
 // 生产环境接入真实后端时，仅需将此文件内的每个函数替换为对应的
 // http 请求（如 axios/fetch），并携带 token，服务端做同样的权限判断即可。
 import { initDB, tables } from './db.js'
+import { genId } from '@/utils/format.js'
 
 // 会话状态（模拟服务端 session / 前端登录 token 的解码结果）
 const CURRENT_USER_KEY = 'hms_current_user'
@@ -74,6 +75,58 @@ export function logout() {
   currentUser.info = null
 }
 
+// 开放注册：仅允许患者与医生自助注册；管理员账户由系统内置维护。
+// 返回脱敏后的用户信息。
+export function register({ role, account, password, name, dept, title, gender, age, phone }) {
+  if (role !== 'patient' && role !== 'doctor') throw new BizError('该身份暂不支持自助注册')
+  const accountTrim = (account || '').trim()
+  const nameTrim = (name || '').trim()
+  if (!accountTrim || !nameTrim) throw new BizError('请填写账号与姓名')
+  if (!password || password.length < 6) throw new BizError('密码长度至少为 6 位')
+  if (!phone || !/^1[3-9]\d{9}$/.test(phone.trim())) throw new BizError('请填写有效的 11 位手机号')
+
+  const users = tables.users()
+  if (users.some((x) => x.account === accountTrim)) throw new BizError('该账号已存在')
+
+  const newUser = {
+    id: genId('u'),
+    account: accountTrim,
+    password,
+    role,
+    name: nameTrim,
+    dept: role === 'doctor' ? dept || '' : undefined,
+    title: role === 'doctor' ? title || '' : undefined,
+    gender: role === 'patient' ? gender : undefined,
+    age: role === 'patient' ? Number(age) || undefined : undefined,
+    phone: phone.trim(),
+    medicalNo: role === 'patient' ? `MN-${Date.now()}` : undefined,
+  }
+  users.push(newUser)
+  tables.saveUsers(users)
+  const { password: _p, ...safe } = newUser
+  return safe
+}
+
+// 忘记密码：通过「账号 + 姓名 + 手机号」验证身份后重置密码。
+export function resetPassword({ account, name, phone, newPassword }) {
+  const accountTrim = (account || '').trim()
+  const nameTrim = (name || '').trim()
+  const phoneTrim = (phone || '').trim()
+  if (!accountTrim || !nameTrim || !phoneTrim) throw new BizError('请填写完整的账号、姓名与手机号')
+  if (!newPassword || newPassword.length < 6) throw new BizError('新密码长度至少为 6 位')
+
+  const users = tables.users()
+  const target = users.find((x) => x.account === accountTrim)
+  if (!target) throw new BizError('未找到该账号')
+  if (target.role === 'admin') throw new BizError('管理员账户不支持通过此方式重置密码')
+  if (target.name !== nameTrim || (target.phone || '') !== phoneTrim) {
+    throw new BizError('身份信息校验失败，姓名或手机号不正确')
+  }
+  target.password = newPassword
+  tables.saveUsers(users)
+  return true
+}
+
 // ==================== 患者视角接口 ====================
 // 我的健康档案：只能查阅属于当前患者本人的生理信号历史记录
 export function getMySignals() {
@@ -141,7 +194,7 @@ export function createReservation({ deviceId, timeRange, purpose }) {
   if (!timeRange) throw new BizError('请填写预约时间')
   const reservations = tables.reservations()
   const newRes = {
-    id: 'res_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+    id: genId('res'),
     deviceId: deviceId,
     deviceName: device.name,
     deviceCode: device.code,
@@ -181,7 +234,7 @@ export function createUser({ role, account, password, name, dept, title, gender,
   if (users.some((x) => x.account === account)) throw new BizError('该账号已存在')
   if (!account || !password || !name) throw new BizError('请填写完整账号、密码与姓名')
   const newUser = {
-    id: 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+    id: genId('u'),
     account,
     password,
     role,
@@ -238,7 +291,7 @@ export function createDevice(data) {
   const now = new Date()
   const ym = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
   const newDevice = {
-    id: 'dev_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+    id: genId('dev'),
     code: `MEQ-${ym}-${String(counter).padStart(4, '0')}`,
     name: data.name,
     model: data.model || '',
