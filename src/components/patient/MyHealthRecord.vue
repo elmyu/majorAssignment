@@ -59,7 +59,7 @@ const latestSummary = computed(() => {
     { key: '心率', val: `${r.heartRate} bpm`, ok: isNormal('heartRate', r.heartRate) },
     { key: '收缩压', val: `${r.sbp} mmHg`, ok: isNormal('sbp', r.sbp) },
     { key: '舒张压', val: `${r.dbp} mmHg`, ok: isNormal('dbp', r.dbp) },
-    { key: '血氧', val: `${r.spo2}%`, ok: isNormal('spo2', r.spo2) },
+    { key: '血氧', val: `${Math.round(r.spo2)}%`, ok: isNormal('spo2', r.spo2) },
     { key: '体温', val: `${r.temp}℃`, ok: isNormal('temp', r.temp) },
   ];
 });
@@ -145,7 +145,7 @@ const latestSummary = computed(() => {
               <td>{{ r.heartRate }} bpm</td>
               <td>{{ r.sbp }} mmHg</td>
               <td>{{ r.dbp }} mmHg</td>
-              <td>{{ r.spo2 }}%</td>
+                            <td>{{ Math.round(r.spo2) }}%</td>
               <td>{{ r.temp }}℃</td>
               <td>{{ r.note || '-' }}</td>
             </tr>

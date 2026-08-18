@@ -175,7 +175,7 @@ function seedSignals() {
         heartRate: fluctuation(row.heart),
         sbp: fluctuation(row.sbp),
         dbp: fluctuation(row.dbp),
-        spo2: Math.max(90, Math.min(100, row.spo2 + (Math.random() - 0.5) * 4)),
+        spo2: Math.round(Math.max(90, Math.min(100, row.spo2 + (Math.random() - 0.5) * 4))),
         temp: Math.round((row.temp + (Math.random() - 0.5) * 0.6) * 10) / 10,
         note: '',
       });

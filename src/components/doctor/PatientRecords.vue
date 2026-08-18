@@ -141,7 +141,7 @@ const summaryItems = computed(() => {
                   <td>{{ r.heartRate }} bpm</td>
                   <td>{{ r.sbp }} mmHg</td>
                   <td>{{ r.dbp }} mmHg</td>
-                  <td>{{ r.spo2 }}%</td>
+                  <td>{{ Math.round(r.spo2) }}%</td>
                   <td>{{ r.temp }}℃</td>
                 </tr>
               </tbody>
