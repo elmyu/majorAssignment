@@ -43,6 +43,41 @@ const forgotForm = ref({
 const forgotError = ref('')
 const forgotSuccess = ref('')
 
+// ---- 模拟验证码（纯前端演示，实际应服务端生成并短信下发）----
+// 注册流程
+const regCaptcha = ref('')
+const regCaptchaInput = ref('')
+const regCaptchaMsg = ref('')
+// 忘记密码流程
+const forgotCaptcha = ref('')
+const forgotCaptchaInput = ref('')
+const forgotCaptchaMsg = ref('')
+
+/** 生成 4 位随机验证码并返回 */
+function genCaptcha() {
+  return String(Math.floor(1000 + Math.random() * 9000))
+}
+
+/**
+ * 获取验证码（模拟短信下发）。
+ * field: 用于区分当前所在的表单流程提示对象
+ */
+function sendCaptcha(field, msg) {
+  const code = genCaptcha()
+  field.value = code
+  msg.value = `验证码已发送：${code}（演示环境直接展示）`
+  // 3 秒后清除提示
+  setTimeout(() => { if (msg.value) msg.value = '' }, 5000)
+}
+
+/** 校验验证码，错误时返回提示，通过返回空字符串 */
+function checkCaptcha(field, input) {
+  if (!field.value) return '请先获取验证码'
+  if (!input.value.trim()) return '请填写验证码'
+  if (input.value.trim() !== field.value) return '验证码错误'
+  return ''
+}
+
 const roleOptions = [
   { value: 'patient', label: '患者' },
   { value: 'doctor', label: '医生' },
