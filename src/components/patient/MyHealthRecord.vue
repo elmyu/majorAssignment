@@ -9,6 +9,9 @@ const records = ref([]);
 const loading = ref(true);
 const errorMsg = ref('');
 const timeRange = ref('all');
+// 精确日期范围查找（按年月日）
+const dateStart = ref('');
+const dateEnd = ref('');
 
 onMounted(() => {
   try {
@@ -28,8 +31,22 @@ const filtered = computed(() => {
   if (timeRange.value === '7') days = 7;
   else if (timeRange.value === '30') days = 30;
   else if (timeRange.value === '90') days = 90;
-  return records.value.filter((r) => now - new Date(r.recordTime).getTime() <= days * 86400000);
+  return records.value.filter((r) => {
+    const t = new Date(r.recordTime).getTime();
+    // 近 N 天（相对时间）
+    if (now - t > days * 86400000) return false;
+    // 精确日期范围（YYYY-MM-DD），判断记录日期是否落在 [dateStart, dateEnd] 区间内
+    const day = new Date(r.recordTime).toISOString().slice(0, 10);
+    if (dateStart.value && day < dateStart.value) return false;
+    if (dateEnd.value && day > dateEnd.value) return false;
+    return true;
+  });
 });
+
+const clearDate = () => {
+  dateStart.value = '';
+  dateEnd.value = '';
+};
 
 // ---- 最近一次测量概览 ----
 const latest = computed(() => (records.value.length ? records.value[0] : null));
@@ -86,15 +103,24 @@ const latestSummary = computed(() => {
       </div>
     </section>
 
-    <section class="table-card">
+        <section class="table-card">
       <div class="toolbar">
         <h3>生理信号历史记录</h3>
-        <select v-model="timeRange" class="range-select">
-          <option value="all">全部</option>
-          <option value="90">近 90 天</option>
-          <option value="30">近 30 天</option>
-          <option value="7">近 7 天</option>
-        </select>
+        <div class="toolbar-right">
+          <div class="date-group">
+            <label><span>起</span><input type="date" v-model="dateStart" class="date-input" /></label>
+            <label><span>止</span><input type="date" v-model="dateEnd" class="date-input" /></label>
+            <button class="clear-date" @click="clearDate" :disabled="!dateStart && !dateEnd">
+              清除日期
+            </button>
+          </div>
+          <select v-model="timeRange" class="range-select">
+            <option value="all">全部</option>
+            <option value="90">近 90 天</option>
+            <option value="30">近 30 天</option>
+            <option value="7">近 7 天</option>
+          </select>
+        </div>
       </div>
       <div v-if="loading" class="empty">加载中...</div>
       <div v-else-if="errorMsg" class="empty error">{{ errorMsg }}</div>
@@ -239,6 +265,48 @@ const latestSummary = computed(() => {
   margin: 0;
   font-size: 1rem;
   color: #1f2937;
+}
+.toolbar-right {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.date-group {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.date-group label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+.date-input {
+  padding: 5px 8px;
+  border: 1px solid #e0e7e0;
+  font-size: 0.82rem;
+  font-family: inherit;
+  background: #fff;
+}
+.clear-date {
+  padding: 6px 12px;
+  border: 1px solid #e0e7e0;
+  background: #fff;
+  color: #b05656;
+  font-size: 0.78rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+.clear-date:hover:not(:disabled) {
+  background: #fdeeee;
+}
+.clear-date:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 .range-select {
   padding: 6px 10px;
