@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { listUsers, createUser, updateUser, deleteUser } from '@/services/api.js';
-import { ROLE_LABELS } from '@/utils/constants.js';
+import { ROLE_LABELS, DEPARTMENTS } from '@/utils/constants.js';
 
 const users = ref([]);
 const loading = ref(true);
@@ -353,9 +353,12 @@ function executeBatchDelete() {
               }}<input v-model="form.password" type="password"
             /></label>
           </div>
-          <template v-if="form.role === 'doctor'">
+                    <template v-if="form.role === 'doctor'">
             <div class="row2">
-              <label class="f">科室<input v-model="form.dept" /></label
+              <label class="f"
+                >科室<select v-model="form.dept">
+                  <option v-for="d in DEPARTMENTS" :key="d" :value="d">{{ d }}</option>
+                </select></label
               ><label class="f">职称<input v-model="form.title" /></label>
             </div>
           </template>

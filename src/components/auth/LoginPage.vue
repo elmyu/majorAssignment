@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { login, register, resetPassword } from '@/services/api.js';
-import { ROLE_LABELS, HOME_BY_ROLE } from '@/utils/constants.js';
+import { ROLE_LABELS, HOME_BY_ROLE, DEPARTMENTS } from '@/utils/constants.js';
 
 const router = useRouter();
 
@@ -381,10 +381,13 @@ function doResetPassword() {
             </label>
           </div>
 
-          <template v-if="regForm.role === 'doctor'">
+                    <template v-if="regForm.role === 'doctor'">
             <label class="field">
               <span>所在科室</span>
-              <input v-model="regForm.dept" type="text" placeholder="如 心内科" />
+              <select v-model="regForm.dept">
+                <option value="">-- 请选择科室 --</option>
+                <option v-for="d in DEPARTMENTS" :key="d" :value="d">{{ d }}</option>
+              </select>
             </label>
             <label class="field">
               <span>职称</span>
