@@ -11,6 +11,7 @@ const DB_KEYS = {
   schedules: 'hms_schedules',
   devices: 'hms_devices',
   reservations: 'hms_reservations',
+  appointments: 'hms_appointments',
 };
 
 // ---------- 通用读写 ----------
@@ -340,6 +341,11 @@ function seedReservations() {
   ];
 }
 
+// 患者挂号预约：初始为空，由患者在线发起
+function seedAppointments() {
+  return [];
+}
+
 // ---------- 初始化 ----------
 function isSeeded() {
   return read(DB_KEYS.users) !== null;
@@ -352,6 +358,7 @@ export function initDB() {
   write(DB_KEYS.schedules, seedSchedules());
   write(DB_KEYS.devices, seedDevices());
   write(DB_KEYS.reservations, seedReservations());
+  write(DB_KEYS.appointments, seedAppointments());
 }
 
 export function resetDB() {
@@ -366,9 +373,11 @@ export const tables = {
   schedules: () => read(DB_KEYS.schedules) || [],
   devices: () => read(DB_KEYS.devices) || [],
   reservations: () => read(DB_KEYS.reservations) || [],
+  appointments: () => read(DB_KEYS.appointments) || [],
   saveUsers: (v) => write(DB_KEYS.users, v),
   saveSignals: (v) => write(DB_KEYS.signals, v),
   saveSchedules: (v) => write(DB_KEYS.schedules, v),
   saveDevices: (v) => write(DB_KEYS.devices, v),
   saveReservations: (v) => write(DB_KEYS.reservations, v),
+  saveAppointments: (v) => write(DB_KEYS.appointments, v),
 };

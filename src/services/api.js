@@ -160,6 +160,77 @@ export function getSchedules() {
   return schedules;
 }
 
+// ==================== 患者挂号预约 ====================
+// 患者在线预约挂号：基于医生排班时段发起，需校验排班存在且为目标医生的时段
+export function createAppointment({ scheduleId, reason }) {
+  const u = assertRole(['patient']);
+  const users = tables.users();
+  const schedules = tables.schedules();
+  const schedule = schedules.find((s) => s.id === scheduleId);
+  if (!schedule) throw new BizError('该排班时段不存在或已失效');
+  // 只允许预约仍处于「出诊/空闲」状态的时段
+  if (schedule.status !== '出诊' && schedule.status !== '空闲') {
+    throw new BizError('该时段不支持预约');
+  }
+  const doctor = users.find((x) => x.id === schedule.doctorId);
+  if (!doctor) throw new BizError('医生信息不存在');
+  const appointments = tables.appointments();
+  // 同一患者在同一时段不可重复预约
+  if (
+    appointments.some(
+      (a) =>
+        a.patientId === u.id &&
+        a.doctorId === schedule.doctorId &&
+        a.appointmentDate === schedule.date &&
+        a.timeRange === schedule.timeRange &&
+        a.status !== '已取消'
+    )
+  ) {
+    throw new BizError('您已预约该时段的号，请勿重复预约');
+  }
+  const newApp = {
+    id: genId('appt'),
+    patientId: u.id,
+    patientName: u.name,
+    doctorId: schedule.doctorId,
+    doctorName: doctor.name,
+    doctorDept: doctor.dept || '',
+    doctorTitle: doctor.title || '',
+    appointmentDate: schedule.date,
+    weekday: schedule.weekday || '',
+    timeRange: schedule.timeRange,
+    location: schedule.location || '',
+    reason: reason || '',
+    status: '待就诊',
+    createdAt: new Date().toISOString(),
+  };
+  appointments.unshift(newApp);
+  tables.saveAppointments(appointments);
+  return newApp;
+}
+
+// 患者查看自己所有的挂号记录（含状态）
+export function getMyAppointments() {
+  const u = assertRole(['patient']);
+  return tables
+    .appointments()
+    .filter((a) => a.patientId === u.id)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+// 患者取消挂号：仅本人且状态为「待就诊」时允许
+export function cancelAppointment(id) {
+  const u = assertRole(['patient']);
+  const appointments = tables.appointments();
+  const target = appointments.find((a) => a.id === id);
+  if (!target) throw new BizError('该挂号记录不存在');
+  if (target.patientId !== u.id) throw new PermissionError('您只能取消本人的挂号');
+  if (target.status !== '待就诊') throw new BizError('当前状态不支持取消');
+  target.status = '已取消';
+  tables.saveAppointments(appointments);
+  return true;
+}
+
 // ==================== 医生视角接口 ====================
 // 患者信息调阅：医生有权限查看所有患者的生理信号记录与基本信息
 export function getPatientsForDoctor() {

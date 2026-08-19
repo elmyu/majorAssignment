@@ -19,6 +19,7 @@ export const HOME_BY_ROLE = {
 export const MENUS = {
   patient: [
     { to: '/patient/health', label: '我的健康档案' },
+    { to: '/patient/appointment', label: '预约挂号' },
     { to: '/patient/schedule', label: '医生时间查看' },
   ],
   doctor: [

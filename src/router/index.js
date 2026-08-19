@@ -28,11 +28,17 @@ const routes = [
         component: () => import('@/components/patient/MyHealthRecord.vue'),
         meta: { title: '我的健康档案' },
       },
-      {
+            {
         path: 'schedule',
         name: 'patientSchedule',
         component: () => import('@/components/patient/DoctorScheduleView.vue'),
         meta: { title: '医生时间查看' },
+      },
+      {
+        path: 'appointment',
+        name: 'patientAppointment',
+        component: () => import('@/components/patient/PatientAppointment.vue'),
+        meta: { title: '预约挂号' },
       },
       { path: '', redirect: '/patient/health' },
     ],
