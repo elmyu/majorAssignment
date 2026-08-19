@@ -1010,18 +1010,24 @@ function executeBatchDelete() {
 }
 .toast-container {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   z-index: 2000;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 8px;
 }
 .toast-item {
-  padding: 10px 16px;
+  padding: 12px 24px;
   background: #fff;
-  font-size: 0.84rem;
+  font-size: 0.88rem;
+  font-weight: 600;
   border-left: 4px solid #83b785;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
 }
 .toast-success {
   border-left-color: #4caf84;
