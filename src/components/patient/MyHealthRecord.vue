@@ -13,9 +13,9 @@ const timeRange = ref('all');
 const dateStart = ref('');
 const dateEnd = ref('');
 
-onMounted(() => {
+onMounted(async () => {
   try {
-    const res = getMySignals();
+    const res = await getMySignals();
     patient.value = res.patient;
     records.value = res.records;
   } catch (e) {

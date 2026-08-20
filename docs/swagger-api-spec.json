@@ -1,0 +1,876 @@
+{
+  "paths": {
+    "/api/users/login": {
+      "post": {
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "200": {
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Login"
+              }
+            }
+          }
+        },
+        "summary": "\u7528\u6237\u767b\u5f55",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/users/register": {
+      "post": {
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Register"
+              }
+            }
+          }
+        },
+        "summary": "\u5f00\u653e\u6ce8\u518c\uff08\u60a3\u8005/\u533b\u751f\uff09",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/users/reset-password": {
+      "post": {
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "200": {
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPassword"
+              }
+            }
+          }
+        },
+        "summary": "\u91cd\u7f6e\u5bc6\u7801",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/users": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "\u7ba1\u7406\u5458\uff1a\u7528\u6237\u5217\u8868",
+        "tags": [
+          "users"
+        ]
+      },
+      "post": {
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          }
+        },
+        "summary": "\u7ba1\u7406\u5458\uff1a\u521b\u5efa\u7528\u6237",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/users/{user_id}": {
+      "put": {
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "200": {
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          }
+        },
+        "summary": "\u7ba1\u7406\u5458\uff1a\u4fee\u6539\u7528\u6237",
+        "tags": [
+          "users"
+        ]
+      },
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "\u7ba1\u7406\u5458\uff1a\u5220\u9664\u7528\u6237",
+        "tags": [
+          "users"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "user_id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ]
+    },
+    "/api/devices": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "\u8bbe\u5907\u5217\u8868\uff08\u533b\u751f/\u7ba1\u7406\u5458\u53ef\u67e5\u770b\uff09",
+        "tags": [
+          "devices"
+        ]
+      },
+      "post": {
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceCreate"
+              }
+            }
+          }
+        },
+        "summary": "\u7ba1\u7406\u5458\uff1a\u65b0\u589e\u8bbe\u5907",
+        "tags": [
+          "devices"
+        ]
+      }
+    },
+    "/api/devices/{device_id}": {
+      "put": {
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "200": {
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceUpdate"
+              }
+            }
+          }
+        },
+        "summary": "\u7ba1\u7406\u5458\uff1a\u4fee\u6539\u8bbe\u5907",
+        "tags": [
+          "devices"
+        ]
+      },
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "\u7ba1\u7406\u5458\uff1a\u5220\u9664\u8bbe\u5907",
+        "tags": [
+          "devices"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "device_id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ]
+    },
+    "/api/signals/my": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "\u60a3\u8005\uff1a\u67e5\u770b\u672c\u4eba\u7684\u751f\u7406\u4fe1\u53f7\u8bb0\u5f55",
+        "tags": [
+          "signals"
+        ]
+      }
+    },
+    "/api/signals/patient/{patient_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "\u533b\u751f\uff1a\u67e5\u770b\u6307\u5b9a\u60a3\u8005\u7684\u751f\u7406\u4fe1\u53f7\u8bb0\u5f55",
+        "tags": [
+          "signals"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "patient_id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ]
+    },
+    "/api/booking/schedules": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "\u533b\u751f\u51fa\u8bca\u6392\u73ed\u5217\u8868",
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/api/booking/appointments": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "\u60a3\u8005\uff1a\u6211\u7684\u6302\u53f7\u8bb0\u5f55",
+        "tags": [
+          "booking"
+        ]
+      },
+      "post": {
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentCreate"
+              }
+            }
+          }
+        },
+        "summary": "\u60a3\u8005\uff1a\u5728\u7ebf\u6302\u53f7",
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/api/booking/appointments/{appt_id}/cancel": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "\u60a3\u8005\uff1a\u53d6\u6d88\u6302\u53f7",
+        "tags": [
+          "booking"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "appt_id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ]
+    },
+    "/api/booking/patients": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "\u533b\u751f\uff1a\u53ef\u8c03\u9605\u7684\u60a3\u8005\u5217\u8868",
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/api/booking/reservations": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "\u8bbe\u5907\u9884\u7ea6\u65e5\u5fd7\uff08\u533b\u751f/\u7ba1\u7406\u5458\uff09",
+        "tags": [
+          "booking"
+        ]
+      },
+      "post": {
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReservationCreate"
+              }
+            }
+          }
+        },
+        "summary": "\u533b\u751f\uff1a\u9884\u7ea6\u8bbe\u5907",
+        "tags": [
+          "booking"
+        ]
+      }
+    },
+    "/api/booking/reservations/{res_id}/cancel": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "\u53d6\u6d88\u8bbe\u5907\u9884\u7ea6\uff08\u672c\u4eba\u6216\u7ba1\u7406\u5458\uff09",
+        "tags": [
+          "booking"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "res_id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ]
+    }
+  },
+  "info": {
+    "title": "\u533b\u7597\u673a\u6784\u4fe1\u606f\u7ba1\u7406\u7cfb\u7edf REST API",
+    "version": "1.0.0"
+  },
+  "tags": [
+    {
+      "name": "users",
+      "description": "\u8ba4\u8bc1\u4e0e\u7528\u6237\u7ba1\u7406\u63a5\u53e3"
+    },
+    {
+      "name": "devices",
+      "description": "\u8bbe\u5907\u7ba1\u7406\u63a5\u53e3"
+    },
+    {
+      "name": "signals",
+      "description": "\u751f\u7406\u4fe1\u53f7\u8bb0\u5f55\u63a5\u53e3"
+    },
+    {
+      "name": "booking",
+      "description": "\u6392\u73ed\u4e0e\u9884\u7ea6\u63a5\u53e3"
+    }
+  ],
+  "openapi": "3.0.2",
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "Error code"
+          },
+          "status": {
+            "type": "string",
+            "description": "Error name"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Errors",
+            "additionalProperties": {}
+          }
+        },
+        "additionalProperties": false
+      },
+      "PaginationMetadata": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "Total number of items."
+          },
+          "total_pages": {
+            "type": "integer",
+            "description": "Total number of pages."
+          },
+          "first_page": {
+            "type": "integer",
+            "description": "First available page number."
+          },
+          "last_page": {
+            "type": "integer",
+            "description": "Last available page number."
+          },
+          "page": {
+            "type": "integer",
+            "description": "Current page number."
+          },
+          "previous_page": {
+            "type": "integer",
+            "description": "Previous page number."
+          },
+          "next_page": {
+            "type": "integer",
+            "description": "Next page number."
+          }
+        },
+        "additionalProperties": false
+      },
+      "Login": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "type": "string",
+            "description": "\u767b\u5f55\u8d26\u53f7"
+          },
+          "password": {
+            "type": "string",
+            "description": "\u767b\u5f55\u5bc6\u7801"
+          }
+        },
+        "required": [
+          "account",
+          "password"
+        ],
+        "additionalProperties": false
+      },
+      "Register": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "description": "\u89d2\u8272: patient/doctor"
+          },
+          "account": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "dept": {
+            "type": "string",
+            "description": "\u79d1\u5ba4(\u533b\u751f)"
+          },
+          "title": {
+            "type": "string",
+            "description": "\u804c\u79f0(\u533b\u751f)"
+          },
+          "gender": {
+            "type": "string",
+            "description": "\u6027\u522b(\u60a3\u8005)"
+          },
+          "age": {
+            "type": "integer",
+            "description": "\u5e74\u9f84(\u60a3\u8005)"
+          }
+        },
+        "required": [
+          "account",
+          "name",
+          "password",
+          "phone",
+          "role"
+        ],
+        "additionalProperties": false
+      },
+      "ResetPassword": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string",
+            "description": "\u624b\u673a\u53f7"
+          },
+          "newPassword": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "account",
+          "name",
+          "newPassword"
+        ],
+        "additionalProperties": false
+      },
+      "UserCreate": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string"
+          },
+          "account": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "dept": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string"
+          },
+          "age": {
+            "type": "integer"
+          },
+          "bloodType": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "medicalNo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "account",
+          "name",
+          "password",
+          "role"
+        ],
+        "additionalProperties": false
+      },
+      "UserUpdate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "dept": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string"
+          },
+          "age": {
+            "type": "integer"
+          },
+          "bloodType": {
+            "type": "string"
+          },
+          "medicalNo": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DeviceCreate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "department": {
+            "type": "string"
+          },
+          "purchaseDate": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string"
+          },
+          "runStatus": {
+            "type": "string"
+          },
+          "lastCalibrated": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "department",
+          "name",
+          "purchaseDate"
+        ],
+        "additionalProperties": false
+      },
+      "DeviceUpdate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "department": {
+            "type": "string"
+          },
+          "purchaseDate": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string"
+          },
+          "runStatus": {
+            "type": "string"
+          },
+          "lastCalibrated": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AppointmentCreate": {
+        "type": "object",
+        "properties": {
+          "scheduleId": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "scheduleId"
+        ],
+        "additionalProperties": false
+      },
+      "ReservationCreate": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string"
+          },
+          "timeRange": {
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "deviceId",
+          "timeRange"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "responses": {
+      "UNPROCESSABLE_CONTENT": {
+        "description": "Unprocessable Content",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "DEFAULT_ERROR": {
+        "description": "Default error response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  }
+}

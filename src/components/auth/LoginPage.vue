@@ -121,11 +121,10 @@ function sendForgotCaptcha() {
 }
 
 /** 重置密码：校验通过后调用后端接口 */
-function submitReset(phone, email) {
+async function submitReset(phone, email) {
   try {
-    // 后端当前以「账号 + 姓名 + 手机号」对接；邮箱找回时 phone 传空，
-    // 待后端支持 email 字段校验后再同步扩展（见注释）。
-    resetPassword({
+    // 后端以「账号 + 姓名 + 手机号」对接；邮箱找回时 phone 传空。
+    await resetPassword({
       account: forgotForm.value.account,
       name: forgotForm.value.name,
       phone,
@@ -188,7 +187,7 @@ function selectRole(value) {
   errorMsg.value = '';
 }
 
-function doLogin() {
+async function doLogin() {
   errorMsg.value = '';
   successMsg.value = '';
   if (!account.value.trim() || !password.value) {
@@ -196,7 +195,7 @@ function doLogin() {
     return;
   }
   try {
-    const user = login(account.value.trim(), password.value);
+    const user = await login(account.value.trim(), password.value);
     if (user.role !== role.value) {
       errorMsg.value = `该账号为"${ROLE_LABELS[user.role]}"身份，与当前选择不符`;
       return;
@@ -208,7 +207,7 @@ function doLogin() {
 }
 
 // ---------- 注册 ----------
-function doRegister() {
+async function doRegister() {
   regError.value = '';
   regSuccess.value = '';
   const f = regForm.value;
@@ -221,8 +220,8 @@ function doRegister() {
     regError.value = capErr;
     return;
   }
-  try {
-    register({
+    try {
+    await register({
       role: f.role,
       account: f.account,
       password: f.password,
@@ -231,10 +230,10 @@ function doRegister() {
       title: f.title,
       gender: f.gender,
       age: f.age,
-            phone: f.phone,
+      phone: f.phone,
     });
     // 注册成功后自动登录并进入对应首页
-    login(f.account.trim(), f.password);
+    await login(f.account.trim(), f.password);
     regCaptcha.value = '';
     regCaptchaInput.value = '';
     regCaptchaMsg.value = '';

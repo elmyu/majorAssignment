@@ -10,9 +10,9 @@ const errorMsg = ref('');
 const statusFilter = ref('');
 const runFilter = ref('');
 
-onMounted(() => {
+onMounted(async () => {
   try {
-    devices.value = getDevices();
+    devices.value = await getDevices();
   } catch (e) {
     errorMsg.value = e.message;
   } finally {

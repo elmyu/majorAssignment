@@ -28,17 +28,17 @@ function showToast(msg, type = 'success') {
   setTimeout(() => (toast.value = null), 2400);
 }
 
-onMounted(() => {
-  load();
+onMounted(async () => {
+  await load();
   bindDrag();
 });
 onBeforeUnmount(() => {
   unbindDrag();
 });
 
-function load() {
+async function load() {
   try {
-    users.value = listUsers(roleFilter.value);
+    users.value = await listUsers(roleFilter.value);
   } catch (e) {
     errorMsg.value = e.message;
   } finally {
@@ -162,7 +162,7 @@ function close() {
   showModal.value = false;
 }
 
-function submit() {
+async function submit() {
   if (!form.value.account.trim() || !form.value.name.trim()) {
     showToast('请填写账号与姓名', 'warning');
     return;
@@ -171,7 +171,7 @@ function submit() {
     showToast('请设置初始密码', 'warning');
     return;
   }
-  try {
+    try {
     if (editing.value) {
       const patch = { name: form.value.name, phone: form.value.phone };
       if (form.value.password.trim()) patch.password = form.value.password.trim();
@@ -184,10 +184,10 @@ function submit() {
         patch.bloodType = form.value.bloodType;
         patch.medicalNo = form.value.medicalNo;
       }
-      updateUser(editing.value.id, patch);
+      await updateUser(editing.value.id, patch);
       showToast('用户信息已更新');
     } else {
-      createUser({
+      await createUser({
         ...form.value,
         age: Number(form.value.age),
         password: form.value.password.trim(),
@@ -195,7 +195,7 @@ function submit() {
       showToast('新用户创建成功');
     }
     close();
-    load();
+    await load();
   } catch (e) {
     showToast(e.message, 'warning');
   }
@@ -205,33 +205,33 @@ function submit() {
 function askDelete(u) {
   confirmDel.value = u;
 }
-function doDelete() {
+async function doDelete() {
   try {
-    deleteUser(confirmDel.value.id);
+    await deleteUser(confirmDel.value.id);
     showToast(`已删除用户「${confirmDel.value.name}」`);
     confirmDel.value = null;
-    load();
+    await load();
   } catch (e) {
     showToast(e.message, 'warning');
     confirmDel.value = null;
   }
 }
-function executeBatchDelete() {
+async function executeBatchDelete() {
   const ids = [...selectedIds.value];
   if (!ids.length) {
     confirmBatchDel.value = false;
     return;
   }
   let ok = 0;
-  ids.forEach((id) => {
-    try {
-      deleteUser(id);
+  try {
+    for (const id of ids) {
+      await deleteUser(id);
       ok++;
-    } catch (e) {}
-  });
+    }
+  } catch (e) {}
   selectedIds.value = new Set();
   confirmBatchDel.value = false;
-  load();
+  await load();
   showToast(`已批量删除 ${ok} 个用户`);
 }
 </script>

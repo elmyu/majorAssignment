@@ -1,0 +1,5 @@
+# 医疗机构信息管理系统 - 后端依赖
+flask>=3.0
+flask-cors>=4.0
+flask-smorest>=0.45
+marshmallow>=3.0

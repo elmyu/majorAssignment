@@ -65,15 +65,15 @@ const showToast = (m, t = 'info') => {
 };
 const setFilter = (s) => (statusFilter.value = statusFilter.value === s ? '' : s);
 
-function loadDevices() {
+async function loadDevices() {
   try {
-    devices.value = getDevices();
+    devices.value = await getDevices();
   } catch (e) {
     showToast(e.message, 'warning');
   }
 }
-onMounted(() => {
-  loadDevices();
+onMounted(async () => {
+  await loadDevices();
   bindDrag();
 });
 onBeforeUnmount(() => {
@@ -183,7 +183,7 @@ const closeModal = () => {
   showBatchAdd.value = false;
 };
 
-function submitForm() {
+async function submitForm() {
   if (!form.name.trim()) return showToast('请输入设备名称', 'warning');
   if (!form.department) return showToast('请选择所属科室', 'warning');
   if (!form.purchaseDate) return showToast('请选择购置日期', 'warning');
@@ -199,16 +199,16 @@ function submitForm() {
     runStatus: form.runStatus,
     note: form.note.trim(),
   };
-  try {
+    try {
     if (editingDevice.value) {
-      updateDevice(editingDevice.value.id, data);
+      await updateDevice(editingDevice.value.id, data);
       showToast('设备信息已更新', 'success');
     } else {
-      createDevice(data);
+      await createDevice(data);
       showToast('新设备已成功录入', 'success');
     }
     closeModal();
-    loadDevices();
+    await loadDevices();
   } catch (e) {
     showToast(e.message, 'warning');
   }
@@ -238,14 +238,14 @@ function removeRow(i) {
   if (batchRows.value.length > 1) batchRows.value.splice(i, 1);
   else batchRows.value = [emptyRow()];
 }
-function submitBatch() {
+async function submitBatch() {
   const valid = batchRows.value.filter((r) => r.name && r.department && r.purchaseDate);
   const invalid = batchRows.value.length - valid.length;
   if (!valid.length) return showToast('请至少填写一台有效设备', 'warning');
-  let ok = 0;
+    let ok = 0;
   try {
-    valid.forEach((r) => {
-      createDevice({
+    for (const r of valid) {
+      await createDevice({
         name: r.name.trim(),
         model: r.model.trim(),
         department: r.department,
@@ -256,7 +256,7 @@ function submitBatch() {
         note: r.note.trim(),
       });
       ok++;
-    });
+    }
   } catch (e) {
     return showToast(e.message, 'warning');
   }
@@ -265,21 +265,21 @@ function submitBatch() {
     'success'
   );
   closeModal();
-  loadDevices();
+  await loadDevices();
 }
 
-function changeStatus(d, ns) {
+async function changeStatus(d, ns) {
   try {
-    updateDevice(d.id, { status: ns });
+    await updateDevice(d.id, { status: ns });
     d.status = ns;
     showToast(`「${d.name}」已更新为"${ns}"`, 'success');
   } catch (e) {
     showToast(e.message, 'warning');
   }
 }
-function changeRunStatus(d, ns) {
+async function changeRunStatus(d, ns) {
   try {
-    updateDevice(d.id, { runStatus: ns });
+    await updateDevice(d.id, { runStatus: ns });
     d.runStatus = ns;
     showToast(`「${d.name}」运行状态已更新为"${ns}"`, 'success');
   } catch (e) {
@@ -295,9 +295,9 @@ const cancelDelete = () => {
   showDeleteConfirm.value = false;
   deleteTarget.value = null;
 };
-function executeDelete() {
+async function executeDelete() {
   try {
-    deleteDevice(deleteTarget.value.id);
+    await deleteDevice(deleteTarget.value.id);
     devices.value = devices.value.filter((x) => x.id !== deleteTarget.value.id);
     showToast(`设备「${deleteTarget.value.name}」已删除`, 'success');
   } catch (e) {
@@ -305,34 +305,33 @@ function executeDelete() {
   }
   cancelDelete();
 }
-function confirmClearScrapped() {
-  const count = devices.value.filter((d) => d.status === '已报废').length;
+async function confirmClearScrapped() {
+  const targets = devices.value.filter((d) => d.status === '已报废');
+  const count = targets.length;
   if (!count) return showToast('没有可清空的报废设备', 'info');
-  devices.value
-    .filter((d) => d.status === '已报废')
-    .forEach((d) => {
-      try {
-        deleteDevice(d.id);
-      } catch (e) {}
-    });
-  loadDevices();
+  try {
+    for (const d of targets) {
+      await deleteDevice(d.id);
+    }
+  } catch (e) {}
+  await loadDevices();
   showToast(`已清空 ${count} 台报废设备`, 'success');
 }
 
 const batchSelectedCount = computed(() => selectedIds.value.size);
-function executeBatchDelete() {
+async function executeBatchDelete() {
   const ids = [...selectedIds.value];
   if (!ids.length) {
     showBatchConfirm.value = false;
     return;
   }
-  ids.forEach((id) => {
-    try {
-      deleteDevice(id);
-    } catch (e) {}
-  });
+  try {
+    for (const id of ids) {
+      await deleteDevice(id);
+    }
+  } catch (e) {}
   selectedIds.value = new Set();
-  loadDevices();
+  await loadDevices();
   showToast(`已批量删除 ${ids.length} 台设备`, 'success');
   showBatchConfirm.value = false;
 }

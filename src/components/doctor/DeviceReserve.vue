@@ -47,10 +47,10 @@ const deptList = computed(() => {
 });
 
 onMounted(loadAll);
-function loadAll() {
+async function loadAll() {
   try {
-    devices.value = getDevices();
-    reservations.value = getReservations();
+    devices.value = await getDevices();
+    reservations.value = await getReservations();
   } catch (e) {
     errorMsg.value = e.message;
   } finally {
@@ -103,7 +103,7 @@ function selectDevice(id) {
   if (selectedDevice.value) showToast(`已选择：${selectedDevice.value.name}`, 'info');
 }
 
-function doReserve() {
+async function doReserve() {
   if (!reserveDeviceId.value) {
     showToast('请先选择要预约的设备', 'warning');
     return;
@@ -117,8 +117,8 @@ function doReserve() {
     showToast('请设置预约时间段', 'warning');
     return;
   }
-  try {
-    createReservation({
+    try {
+    await createReservation({
       deviceId: reserveDeviceId.value,
       timeRange: timeStr,
       purpose: purpose.value.trim(),
@@ -130,7 +130,7 @@ function doReserve() {
     reserveSlot.value = '上午';
     reserveTimeRange.value = '';
     purpose.value = '';
-    loadAll();
+    await loadAll();
   } catch (e) {
     showToast(e.message, 'warning');
   }
@@ -141,12 +141,12 @@ const fmtTime = (iso) => new Date(iso).toLocaleString('zh-CN');
 // ---- 取消预约 ----
 const currentUserName = ref(getCurrentUser()?.name || '');
 
-function doCancel(res) {
+async function doCancel(res) {
   if (!confirm(`确定取消「${res.deviceName}」的预约吗？`)) return;
   try {
-    cancelReservation(res.id);
+    await cancelReservation(res.id);
     showToast('预约已取消');
-    loadAll();
+    await loadAll();
   } catch (e) {
     showToast(e.message, 'warning');
   }

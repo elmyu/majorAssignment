@@ -14,9 +14,9 @@ const signalLoading = ref(false);
 const signalError = ref('');
 const signals = ref([]);
 
-onMounted(() => {
+onMounted(async () => {
   try {
-    patients.value = getPatientsForDoctor();
+    patients.value = await getPatientsForDoctor();
   } catch (e) {
     errorMsg.value = e.message;
   } finally {
@@ -24,13 +24,13 @@ onMounted(() => {
   }
 });
 
-function viewSignals(patient) {
+async function viewSignals(patient) {
   selected.value = patient;
   signalLoading.value = true;
   signalError.value = '';
   signals.value = [];
   try {
-    const res = getSignalsOfPatient(patient.id);
+    const res = await getSignalsOfPatient(patient.id);
     signals.value = res.records;
   } catch (e) {
     signalError.value = e.message;

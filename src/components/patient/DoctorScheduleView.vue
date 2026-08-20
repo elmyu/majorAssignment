@@ -10,9 +10,9 @@ const doctorKeyword = ref('');
 const dateStart = ref('');
 const dateEnd = ref('');
 
-onMounted(() => {
+onMounted(async () => {
   try {
-    schedules.value = getSchedules();
+    schedules.value = await getSchedules();
   } catch (e) {
     errorMsg.value = e.message;
   } finally {

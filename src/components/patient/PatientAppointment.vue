@@ -33,10 +33,10 @@ function showToast(msg, type = 'success') {
 }
 
 onMounted(loadAll);
-function loadAll() {
+async function loadAll() {
   try {
-    schedules.value = getSchedules();
-    myAppointments.value = getMyAppointments();
+    schedules.value = await getSchedules();
+    myAppointments.value = await getMyAppointments();
   } catch (e) {
     errorMsg.value = e.message;
   } finally {
@@ -96,14 +96,14 @@ function openAppoint(s) {
   showModal.value = true;
 }
 
-function doCreate() {
+async function doCreate() {
   if (!selectedSchedule.value) return;
   submitting.value = true;
   try {
-    createAppointment({ scheduleId: selectedSchedule.value.id, reason: reason.value.trim() });
+    await createAppointment({ scheduleId: selectedSchedule.value.id, reason: reason.value.trim() });
     showToast('预约挂号成功');
     showModal.value = false;
-    loadAll();
+    await loadAll();
   } catch (e) {
     showToast(e.message, 'warning');
   } finally {
@@ -116,14 +116,14 @@ const fmtDate = (d) => {
   return `${y}年${Number(m)}月${Number(day)}日`;
 };
 
-function doCancel(a) {
+async function doCancel(a) {
   if (!confirm(`确定取消「${fmtDate(a.appointmentDate)} ${a.timeRange}」的${a.doctorName}挂号吗？`)) {
     return;
   }
   try {
-    cancelAppointment(a.id);
+    await cancelAppointment(a.id);
     showToast('已取消挂号');
-    loadAll();
+    await loadAll();
   } catch (e) {
     showToast(e.message, 'warning');
   }

@@ -48,14 +48,23 @@ __screenshots__/
 Thumbs.db
 Desktop.ini
 
-
 # 本地临时/缓存
 .cache/
 .temp/
 *.tmp
 
-# 构建产物（确保不提交）
+# 构建产物
 node_modules/
 dist/
 dist-ssr/
 coverage/
+
+# ----- Python 后端 -----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+backend/data/
+*.sqlite
+*.db
